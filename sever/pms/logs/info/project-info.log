@@ -1,0 +1,2 @@
+{"level":"INFO","time":"2025-12-27T00:25:34.621+0800","caller":"user/user.go:33","msg":"存入redis成功"}
+{"level":"ERROR","time":"2025-12-27T00:25:34.623+0800","caller":"user/user.go:34","msg":"redis error"}
