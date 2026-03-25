@@ -6,19 +6,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
-	"pms.com/project-pms/pkg/dao"
+	common "pms.com/project-common"
+	"pms.com/project-pms/internal/dao"
+	"pms.com/project-pms/internal/database/tran"
+	"pms.com/project-pms/internal/repo"
 	"pms.com/project-pms/pkg/model"
-	"pms.com/project-pms/pkg/repo"
+	"pms.com/project-pms/pkg/model/user"
 	"time"
 )
 
 type HandlerUser struct {
-	cache repo.Cache
+	cache       repo.Cache
+	memberRepo  repo.MemberRepo
+	transaction tran.Transaction
 }
 
 func New() *HandlerUser {
 	return &HandlerUser{
-		cache: dao.Rc,
+		cache:      dao.Rc,
+		memberRepo: dao.NewMemberDao(),
 	}
 }
 
@@ -36,4 +42,30 @@ func (h *HandlerUser) getCaptcha(ctx *gin.Context) {
 	val, err := h.cache.Get(c, "1")
 	fmt.Println(val)
 	ctx.JSON(http.StatusOK, model.InLegalMobile)
+}
+
+func (h *HandlerUser) register(ctx *gin.Context) {
+	reslut := &common.Result{}
+	var req user.RegisterReq
+	err := ctx.ShouldBind(&req)
+	if err != nil {
+		ctx.JSON(http.StatusOK, reslut.Fail("error"))
+		return
+	}
+	if err := req.Verify(); err != nil {
+		ctx.JSON(http.StatusOK, reslut.Fail("error"))
+		return
+	}
+	//事务操作
+	//err := h.tran.Action(func(conn database.DbConn) error {
+	//数据库操作
+	//数据库操作
+	//return nil
+	//})
+	exist, err := h.memberRepo.GetMemberByEmail(ctx, req.Email)
+	if err != nil {
+		zap.L().Error("error", zap.Error(err))
+		return
+	}
+
 }

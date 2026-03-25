@@ -11,13 +11,22 @@ import (
 var C = InitConfig()
 
 type Config struct {
-	viper *viper.Viper
-	SC    *ServerConfig
+	viper       *viper.Viper
+	SC          *ServerConfig
+	MysqlConfig *MysqlConfig
 }
 
 type ServerConfig struct {
 	Name string
 	Addr string
+}
+
+type MysqlConfig struct {
+	Username string
+	Password string
+	Host     string
+	Port     int
+	Db       string
 }
 
 func InitConfig() *Config {
@@ -32,6 +41,7 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.InitZapLog()
+	conf.InitMysqlConfig()
 	return conf
 }
 
@@ -64,4 +74,15 @@ func (c *Config) ReadRedisConfig() *redis.Options {
 		Password: c.viper.GetString("redis.password"),
 		DB:       c.viper.GetInt("redis.db"),
 	}
+}
+
+func (c *Config) InitMysqlConfig() {
+	mc := &MysqlConfig{
+		Username: c.viper.GetString("mysql.username"),
+		Password: c.viper.GetString("mysql.password"),
+		Host:     c.viper.GetString("mysql.host"),
+		Port:     c.viper.GetInt("mysql.port"),
+		Db:       c.viper.GetString("mysql.db"),
+	}
+	c.MysqlConfig = mc
 }
