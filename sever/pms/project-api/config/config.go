@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -46,9 +45,7 @@ func InitConfig() *Config {
 		log.Fatalln(err)
 	}
 	conf.ReadServerConfig()
-	conf.ReadGrpcConfig()
 	conf.InitZapLog()
-	conf.ReadGrpcConfig()
 	conf.InitMysqlConfig()
 	return conf
 }
@@ -74,21 +71,6 @@ func (c *Config) ReadServerConfig() {
 	sc.Name = c.viper.GetString("server.name")
 	sc.Addr = c.viper.GetString("server.addr")
 	c.SC = sc
-}
-
-func (c *Config) ReadRedisConfig() *redis.Options {
-	return &redis.Options{
-		Addr:     c.viper.GetString("redis.host") + ":" + c.viper.GetString("redis.port"),
-		Password: c.viper.GetString("redis.password"),
-		DB:       c.viper.GetInt("redis.db"),
-	}
-}
-
-func (c *Config) ReadGrpcConfig() {
-	gc := &GrpcConfig{}
-	gc.Name = c.viper.GetString("grpc.name")
-	gc.Addr = c.viper.GetString("grpc.addr")
-	c.GC = gc
 }
 
 func (c *Config) InitMysqlConfig() {

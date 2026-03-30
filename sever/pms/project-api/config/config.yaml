@@ -1,6 +1,6 @@
 server:
-  name: "project-pms"
-  addr: "127.0.0.1:8080"
+  name: "project-api"
+  addr: "127.0.0.1:80"
 zap:
   debugFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\debug\\project-debug.log"
   infoFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\info\\project-info.log"
@@ -8,14 +8,6 @@ zap:
   maxSize: 500
   maxAge: 28
   maxBackups: 3
-redis:
-  host: "localhost"
-  port: 6379
-  password: ""
-  db: 0
-grpc:
-  addr: "127.0.0.1:8881"
-  name: "user"
 mysql:
   username: "root"
   password: "1234"

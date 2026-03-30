@@ -15,9 +15,8 @@ func (r *Result) Sucess(data any) *Result {
 	return r
 }
 
-func (r *Result) Fail(data any) *Result {
-	r.Code = 400
-	r.Msg = "fail"
-	r.Data = data
+func (r *Result) Fail(code BusinessCode, msg string) *Result {
+	r.Code = code
+	r.Msg = msg
 	return r
 }

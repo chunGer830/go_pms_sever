@@ -1,7 +1,9 @@
 package model
 
-import common "pms.com/project-common"
+import (
+	"pms.com/project-common/errs"
+)
 
-const (
-	InLegalMobile common.BusinessCode = 2001
+var (
+	InLegalMobile = errs.NewError(2001, "手机号不合法")
 )
