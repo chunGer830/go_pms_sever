@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"log"
 	common "pms.com/project-common"
+	"pms.com/project-grpc/user/login"
 	"pms.com/project-pms/internal/dao"
 	"pms.com/project-pms/internal/repo"
 	"time"
 )
 
 type LoginService struct {
-	UnimplementedLoginServiceServer
+	login.UnimplementedLoginServiceServer
 	cache repo.Cache
 }
 
@@ -21,7 +22,7 @@ func New() *LoginService {
 	}
 }
 
-func (h *LoginService) GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*CaptchaResponse, error) {
+func (h *LoginService) GetCaptcha(ctx context.Context, msg *login.CaptchaMessage) (*login.CaptchaResponse, error) {
 	rsq := &common.Result{}
 	fmt.Println(rsq)
 	//1. 获取参数
@@ -40,5 +41,5 @@ func (h *LoginService) GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*Ca
 		//发送成功 存入redis
 		fmt.Println(mobile, code)
 	}()
-	return &CaptchaResponse{Code: code}, nil
+	return &login.CaptchaResponse{Code: code}, nil
 }

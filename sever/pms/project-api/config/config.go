@@ -14,6 +14,7 @@ type Config struct {
 	SC          *ServerConfig
 	GC          *GrpcConfig
 	MysqlConfig *MysqlConfig
+	EtcdConfig  *EtcdConfig
 }
 
 type ServerConfig struct {
@@ -24,6 +25,10 @@ type ServerConfig struct {
 type GrpcConfig struct {
 	Name string
 	Addr string
+}
+
+type EtcdConfig struct {
+	Addrs []string
 }
 
 type MysqlConfig struct {
@@ -46,6 +51,7 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.InitZapLog()
+	conf.ReadEtcdConfig()
 	conf.InitMysqlConfig()
 	return conf
 }
@@ -71,6 +77,17 @@ func (c *Config) ReadServerConfig() {
 	sc.Name = c.viper.GetString("server.name")
 	sc.Addr = c.viper.GetString("server.addr")
 	c.SC = sc
+}
+
+func (c *Config) ReadEtcdConfig() {
+	ec := &EtcdConfig{}
+	var addrs []string
+	err := c.viper.UnmarshalKey("etcd.addrs", &addrs)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	ec.Addrs = addrs
+	c.EtcdConfig = ec
 }
 
 func (c *Config) InitMysqlConfig() {

@@ -3,16 +3,22 @@ package user
 import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/resolver"
 	"log"
-	loginServiceV1 "pms.com/project-pms/pkg/service/login.service.v1"
+	"pms.com/project-api/config"
+	"pms.com/project-common/discovery"
+	"pms.com/project-common/logs"
+	"pms.com/project-grpc/user/login"
 )
 
-var LoginServiceClient loginServiceV1.LoginServiceClient
+var LoginServiceClient login.LoginServiceClient
 
 func InitRpcUserClient() {
-	conn, err := grpc.NewClient("127.0.0.1:8881", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	etcdRegister := discovery.NewResolver(config.C.EtcdConfig.Addrs, logs.LG)
+	resolver.Register(etcdRegister)
+	conn, err := grpc.NewClient("etcd:///user", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	LoginServiceClient = loginServiceV1.NewLoginServiceClient(conn)
+	LoginServiceClient = login.NewLoginServiceClient(conn)
 }

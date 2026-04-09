@@ -9,8 +9,6 @@ type Result struct {
 }
 
 func (r *Result) Sucess(data any) *Result {
-	r.Code = 200
-	r.Msg = "success"
 	r.Data = data
 	return r
 }
