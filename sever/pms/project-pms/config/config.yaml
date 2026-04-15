@@ -27,3 +27,8 @@ mysql:
   host: "127.0.0.1"
   port: 3306
   db: "pms"
+jwt:
+  accessExp: 30
+  refreshExp: 45
+  accessSecret: "pms"
+  refreshSecret: "_pms"

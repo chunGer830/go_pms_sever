@@ -1,10 +1,10 @@
-package hoteluser
+package member
 
 import (
 	"time"
 )
 
-type HotelUser struct {
+type Member struct {
 	ID           int64      `gorm:"primaryKey;autoIncrement" json:"id"`                                    // 主键ID
 	HotelName    string     `gorm:"column:hotel_name;type:varchar(100);not null" json:"hotel_name"`        // 酒店名称
 	Username     string     `gorm:"column:username;type:varchar(50);not null;uniqueIndex" json:"username"` // 登录账号
@@ -20,6 +20,6 @@ type HotelUser struct {
 	UpdatedAt    time.Time  `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`                    // 更新时间
 }
 
-func (*HotelUser) TableName() string {
+func (*Member) TableName() string {
 	return "hotel_user"
 }

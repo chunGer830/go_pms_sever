@@ -10,11 +10,10 @@ import (
 var C = InitConfig()
 
 type Config struct {
-	viper       *viper.Viper
-	SC          *ServerConfig
-	GC          *GrpcConfig
-	MysqlConfig *MysqlConfig
-	EtcdConfig  *EtcdConfig
+	viper      *viper.Viper
+	SC         *ServerConfig
+	GC         *GrpcConfig
+	EtcdConfig *EtcdConfig
 }
 
 type ServerConfig struct {
@@ -31,14 +30,6 @@ type EtcdConfig struct {
 	Addrs []string
 }
 
-type MysqlConfig struct {
-	Username string
-	Password string
-	Host     string
-	Port     int
-	Db       string
-}
-
 func InitConfig() *Config {
 	conf := &Config{viper: viper.New()}
 	workDir, _ := os.Getwd()
@@ -52,7 +43,6 @@ func InitConfig() *Config {
 	conf.ReadServerConfig()
 	conf.InitZapLog()
 	conf.ReadEtcdConfig()
-	conf.InitMysqlConfig()
 	return conf
 }
 
@@ -88,15 +78,4 @@ func (c *Config) ReadEtcdConfig() {
 	}
 	ec.Addrs = addrs
 	c.EtcdConfig = ec
-}
-
-func (c *Config) InitMysqlConfig() {
-	mc := &MysqlConfig{
-		Username: c.viper.GetString("mysql.username"),
-		Password: c.viper.GetString("mysql.password"),
-		Host:     c.viper.GetString("mysql.host"),
-		Port:     c.viper.GetInt("mysql.port"),
-		Db:       c.viper.GetString("mysql.db"),
-	}
-	c.MysqlConfig = mc
 }

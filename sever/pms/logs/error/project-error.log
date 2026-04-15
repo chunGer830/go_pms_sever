@@ -1,1 +1,6 @@
 {"level":"ERROR","time":"2025-12-27T00:25:34.623+0800","caller":"user/user.go:34","msg":"redis error"}
+{"level":"ERROR","time":"2026-04-12T15:12:12.055+0800","caller":"login.service.v1/login_service.go:57","msg":"Register db get err ","error":"Error 1146 (42S02): Table 'pms.hotel_user' doesn't exist"}
+{"level":"ERROR","time":"2026-04-12T15:13:56.097+0800","caller":"login.service.v1/login_service.go:57","msg":"Register db get err ","error":"Error 1146 (42S02): Table 'pms.hotel_user' doesn't exist"}
+{"level":"ERROR","time":"2026-04-13T02:03:52.820+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}
+{"level":"ERROR","time":"2026-04-13T02:04:02.813+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}
+{"level":"ERROR","time":"2026-04-13T02:04:19.623+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}

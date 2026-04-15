@@ -81,34 +81,75 @@ func (u *HandlerUser) register(c *gin.Context) {
 		return
 	}
 	//4.返回结果
-	c.JSON(http.StatusOK, result.Sucess(""))
+	c.JSON(http.StatusOK, result.Sucess("注册成功"))
 }
 
-/*
-func (h *HandlerUser) register(ctx *gin.Context) {
-	reslut := &common.Result{}
+func (u *HandlerUser) login(c *gin.Context) {
+	//1.接收参数
+	result := &common.Result{}
+	var req user.LoginReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//2. 调用user grpc 登录
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	msg := &login.LoginMessage{
+		Username: req.Username,
+		Password: req.Password,
+	}
+	loginRsp, err := LoginServiceClient.Login(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+	rsp := &user.LoginRsp{
+		Member: user.Member{
+			Id:        loginRsp.Member.Id,
+			HotelName: loginRsp.Member.HotelName,
+		},
+		TokenList: user.TokenList{
+			AccessToken:    loginRsp.TokenList.AccessToken,
+			AccessTokenExp: loginRsp.TokenList.AccessTokenExp,
+			TokenType:      loginRsp.TokenList.TokenType,
+			RefreshToken:   loginRsp.TokenList.RefreshToken,
+		},
+	}
+	//4.返回结果
+	c.JSON(http.StatusOK, result.Sucess(rsp))
+}
+
+func (u *HandlerUser) changePassword(c *gin.Context) {
+	//1.接收参数
+	result := &common.Result{}
 	var req user.RegisterReq
-	err := ctx.ShouldBind(&req)
+	err := c.ShouldBind(&req)
 	if err != nil {
-		ctx.JSON(http.StatusOK, reslut.Fail("error"))
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
 		return
 	}
+	//2.校验参数
 	if err := req.Verify(); err != nil {
-		ctx.JSON(http.StatusOK, reslut.Fail("error"))
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, err.Error()))
 		return
 	}
-	//事务操作
-	//err := h.tran.Action(func(conn database.DbConn) error {
-	//数据库操作
-	//数据库操作
-	//return nil
-	//})
-	exist, err := h.memberRepo.GetMemberByEmail(ctx, req.Email)
-	fmt.Println(exist)
+	//3.调用grpc 获取响应
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	msg := &login.ChangePasswordMessage{
+		Username:    req.Username,
+		Password:    req.OldPassword,
+		NewPassword: req.Password,
+	}
+	_, err = LoginServiceClient.ChangePassword(ctx, msg)
 	if err != nil {
-		zap.L().Error("error", zap.Error(err))
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
-
+	//4.返回结果
+	c.JSON(http.StatusOK, result.Sucess("修改成功"))
 }
-*/
