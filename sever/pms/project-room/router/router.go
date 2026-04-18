@@ -8,9 +8,9 @@ import (
 	"net"
 	"pms.com/project-common/discovery"
 	"pms.com/project-common/logs"
-	"pms.com/project-grpc/user/login"
-	"pms.com/project-pms/config"
-	loginServiceV1 "pms.com/project-pms/pkg/service/login.service.v1"
+	"pms.com/project-grpc/room"
+	"pms.com/project-room/config"
+	room_service_v1 "pms.com/project-room/pkg/service/room.service.v1"
 )
 
 type Router interface {
@@ -51,7 +51,7 @@ func RegisterGrpc() *grpc.Server {
 	c := gRPCConfig{
 		Addr: config.C.GC.Addr,
 		RegisterFunc: func(g *grpc.Server) {
-			login.RegisterLoginServiceServer(g, loginServiceV1.New())
+			room.RegisterRoomServiceServer(g, room_service_v1.New())
 		}}
 	s := grpc.NewServer()
 	c.RegisterFunc(s)

@@ -1,0 +1,15 @@
+syntax = "proto3";
+package room.service.v1;
+option go_package = "project-room/pkg/service/room.service.v1";
+
+message RoomTypeMessage{
+    string hotel_id = 1;
+}
+
+message RoomTypeResponse{
+
+}
+
+service RoomService {
+  rpc RoomType(RoomTypeMessage) returns (RoomTypeResponse) {}
+}

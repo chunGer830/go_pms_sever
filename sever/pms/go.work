@@ -5,4 +5,5 @@ use (
 	./project-common
 	./project-pms
 	./project-grpc
+	./project-room
 )
