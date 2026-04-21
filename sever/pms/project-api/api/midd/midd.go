@@ -27,7 +27,7 @@ func TokenVerify() func(c *gin.Context) {
 			return
 		}
 		//3.处理结果 通过将信息放入gin上下文 未通过返回未登录
-		c.Set("id", response.Member.Id)
+		c.Set("hotel_id", response.Member.Id)
 		c.Next()
 	}
 }

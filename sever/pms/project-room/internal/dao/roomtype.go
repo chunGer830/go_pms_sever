@@ -45,7 +45,7 @@ func (r RoomTypeDao) DeleteRoomType(ctx context.Context, roomType *room_type_dat
 func (r RoomTypeDao) UpdateRoomType(ctx context.Context, roomType *room_type_data.RoomType) error {
 	return r.conn.Session(ctx).
 		Model(&room_type_data.RoomType{}).
-		Where("hotel_id = ? AND id = ? AND is_deleted = ?", roomType.HotelID, roomType.ID, 0).
+		Where("hotel_id = ? AND id = ? ", roomType.HotelID, roomType.ID).
 		Updates(map[string]any{
 			"type_name":     roomType.TypeName,
 			"type_code":     roomType.TypeCode,

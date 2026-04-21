@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	roomModel "pms.com/project-api/pkg/model/room"
@@ -21,7 +22,7 @@ func New() *HandlerRoom {
 func (r *HandlerRoom) roomType(c *gin.Context) {
 	result := &common.Result{}
 
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -60,7 +61,7 @@ func (r *HandlerRoom) saveRoomType(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -105,7 +106,7 @@ func (r *HandlerRoom) updateRoomType(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -120,7 +121,9 @@ func (r *HandlerRoom) updateRoomType(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
+	fmt.Println(req)
 	msg := &room_type.UpdateRoomTypeMessage{
+		Id:           req.Id,
 		HotelId:      id,
 		TypeName:     req.TypeName,
 		TypeCode:     req.TypeCode,
@@ -129,7 +132,7 @@ func (r *HandlerRoom) updateRoomType(c *gin.Context) {
 		Quantity:     int32(req.Quantity),
 		Status:       int32(req.Status),
 	}
-
+	fmt.Println(msg)
 	_, err = RoomServiceClient.UpdateRoomType(ctx, msg)
 	if err != nil {
 		code, msg := errs.ParseGrpcError(err)
@@ -150,7 +153,7 @@ func (r *HandlerRoom) deleteRoomType(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -183,7 +186,7 @@ func (r *HandlerRoom) deleteRoomType(c *gin.Context) {
 func (r *HandlerRoom) hotelRoom(c *gin.Context) {
 	result := &common.Result{}
 
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -221,7 +224,7 @@ func (r *HandlerRoom) saveHotelRoom(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -266,7 +269,7 @@ func (r *HandlerRoom) updateHotelRoom(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return
@@ -312,7 +315,7 @@ func (r *HandlerRoom) deleteHotelRoom(c *gin.Context) {
 		return
 	}
 	//获取id
-	idValue, exists := c.Get("id")
+	idValue, exists := c.Get("hotel_id")
 	if !exists {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
 		return

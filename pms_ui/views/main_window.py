@@ -44,6 +44,7 @@ class AddRoomTypeDialog(QDialog):
         self._hint_text = hint_text
         self._code_editable = code_editable
         self._room_count_editable = room_count_editable
+        self._initial_id = ""
         self.setWindowTitle(title_text)
         self.setModal(True)
         self.resize(460, 520)
@@ -134,6 +135,7 @@ class AddRoomTypeDialog(QDialog):
         layout.addWidget(buttons)
 
     def set_payload(self, payload: dict[str, object]) -> None:
+        self._initial_id = str(payload.get("id", "")).strip()
         self.name_edit.setText(str(payload.get("name", payload.get("type_name", ""))))
         self.code_edit.setText(str(payload.get("code", payload.get("type_code", ""))))
         self.room_count_spin.setValue(int(payload.get("total_rooms", payload.get("quantity", 1)) or 1))
@@ -157,6 +159,7 @@ class AddRoomTypeDialog(QDialog):
 
     def get_payload(self) -> dict[str, object]:
         return {
+            "id": self._initial_id,
             "name": self.name_edit.text().strip(),
             "code": self.code_edit.text().strip(),
             "total_rooms": self.room_count_spin.value(),
@@ -265,6 +268,7 @@ class AddHotelRoomDialog(QDialog):
         self.room_type_code_edit.setText(str(self.room_type_box.currentData() or ""))
 
     def set_payload(self, payload: dict[str, str]) -> None:
+        self._initial_id = payload.get("id", "")
         self.room_no_edit.setText(payload.get("room_no", ""))
         room_type_code = payload.get("room_type_code", "")
         if room_type_code:
@@ -282,7 +286,7 @@ class AddHotelRoomDialog(QDialog):
 
     def get_payload(self) -> dict[str, str]:
         return {
-            "id": payload.get("id", ""),
+            "id": getattr(self, "_initial_id", ""),
             "room_no": self.room_no_edit.text().strip(),
             "room_type_name": self.room_type_box.currentText().strip(),
             "room_type_code": self.room_type_code_edit.text().strip(),
@@ -357,7 +361,7 @@ class PMSMainWindow(QWidget):
             title_text="编辑房型",
             hint_text="修改房型基础信息。",
             initial_payload=self._room_type_payload_from_row(row_index),
-            code_editable=False,
+            code_editable=True,
             room_count_editable=False,
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
@@ -415,7 +419,7 @@ class PMSMainWindow(QWidget):
         if row_index < 0:
             return
 
-        room_no_item = self.room_management_table.item(row_index, 0)
+        room_no_item = self.room_management_table.item(row_index, 1)
         room_no = room_no_item.text().strip() if room_no_item else ""
         if not room_no:
             return
@@ -426,7 +430,7 @@ class PMSMainWindow(QWidget):
         if row_index < 0:
             return
 
-        code_item = self.room_type_table.item(row_index, 1)
+        code_item = self.room_type_table.item(row_index, 2)
         type_code = code_item.text().strip() if code_item else ""
         if not type_code:
             return
@@ -478,12 +482,13 @@ class PMSMainWindow(QWidget):
         self.stack.setCurrentIndex(0)
 
     def _room_type_payload_from_row(self, row_index: int) -> dict[str, object]:
-        name_item = self.room_type_table.item(row_index, 0)
-        code_item = self.room_type_table.item(row_index, 1)
-        quantity_item = self.room_type_table.item(row_index, 2)
-        price_item = self.room_type_table.item(row_index, 3)
-        occupancy_item = self.room_type_table.item(row_index, 4)
-        status_item = self.room_type_table.item(row_index, 5)
+        id_item = self.room_type_table.item(row_index, 0)
+        name_item = self.room_type_table.item(row_index, 1)
+        code_item = self.room_type_table.item(row_index, 2)
+        quantity_item = self.room_type_table.item(row_index, 3)
+        price_item = self.room_type_table.item(row_index, 4)
+        occupancy_item = self.room_type_table.item(row_index, 5)
+        status_item = self.room_type_table.item(row_index, 6)
 
         raw_price = price_item.text().replace("¥", "").strip() if price_item else ""
         try:
@@ -492,6 +497,7 @@ class PMSMainWindow(QWidget):
             base_price = 0
 
         return {
+            "id": id_item.text().strip() if id_item else "",
             "name": name_item.text().strip() if name_item else "",
             "code": code_item.text().strip() if code_item else "",
             "total_rooms": int(quantity_item.text()) if quantity_item and quantity_item.text().isdigit() else 1,
@@ -501,11 +507,12 @@ class PMSMainWindow(QWidget):
         }
 
     def _room_management_payload_from_row(self, row_index: int) -> dict[str, str]:
-        room_no_item = self.room_management_table.item(row_index, 0)
-        room_type_item = self.room_management_table.item(row_index, 1)
-        floor_item = self.room_management_table.item(row_index, 2)
-        phone_item = self.room_management_table.item(row_index, 3)
-        remark_item = self.room_management_table.item(row_index, 4)
+        id_item = self.room_management_table.item(row_index, 0)
+        room_no_item = self.room_management_table.item(row_index, 1)
+        room_type_item = self.room_management_table.item(row_index, 2)
+        floor_item = self.room_management_table.item(row_index, 3)
+        phone_item = self.room_management_table.item(row_index, 4)
+        remark_item = self.room_management_table.item(row_index, 5)
 
         room_type_name = room_type_item.text().strip() if room_type_item else ""
         room_type_code = ""
@@ -515,7 +522,7 @@ class PMSMainWindow(QWidget):
                 break
 
         return {
-            "id": self.room_records[row_index].id if row_index < len(self.room_records) else "",
+            "id": id_item.text().strip() if id_item else (self.room_records[row_index].id if row_index < len(self.room_records) else ""),
             "room_no": room_no_item.text().strip() if room_no_item else "",
             "room_type_name": room_type_name,
             "room_type_code": room_type_code,
@@ -533,13 +540,14 @@ class PMSMainWindow(QWidget):
             for item in items
             if str(item.get("type_name", "")).strip() and str(item.get("type_code", "")).strip()
         ]
-        self.room_type_table.setColumnCount(6)
-        self.room_type_table.setHorizontalHeaderLabels(["房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
-        self.room_type_table.setColumnHidden(5, False)
+        self.room_type_table.setColumnCount(7)
+        self.room_type_table.setHorizontalHeaderLabels(["ID", "房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
+        self.room_type_table.setColumnHidden(0, True)
         self.room_type_table.setRowCount(0)
         for row_index, item in enumerate(items):
             self.room_type_table.insertRow(row_index)
             values = [
+                str(item.get("id", "")),
                 str(item.get("type_name", "")),
                 str(item.get("type_code", "")),
                 str(item.get("quantity", "")),
@@ -702,6 +710,7 @@ class PMSMainWindow(QWidget):
         for row_index, room in enumerate(self.room_records):
             self.room_management_table.insertRow(row_index)
             values = [
+                room.id or "-",
                 room.room_no,
                 room.room_type,
                 room.floor,
@@ -919,14 +928,14 @@ class PMSMainWindow(QWidget):
         toolbar.addWidget(delete_button)
         toolbar.addStretch()
 
-        self.room_type_table = QTableWidget(0, 6)
-        self.room_type_table.setHorizontalHeaderLabels(["房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
+        self.room_type_table = QTableWidget(0, 7)
+        self.room_type_table.setHorizontalHeaderLabels(["ID", "房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
         self.room_type_table.horizontalHeader().setStretchLastSection(True)
         self.room_type_table.verticalHeader().setVisible(False)
         self.room_type_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.room_type_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.room_type_table.setAlternatingRowColors(False)
-        self.room_type_table.setColumnHidden(5, False)
+        self.room_type_table.setColumnHidden(0, True)
 
         table_layout.addLayout(toolbar)
         table_layout.addWidget(self.room_type_table)
@@ -976,15 +985,16 @@ class PMSMainWindow(QWidget):
         toolbar.addWidget(delete_button)
         toolbar.addStretch()
 
-        self.room_management_table = QTableWidget(0, 5)
+        self.room_management_table = QTableWidget(0, 6)
         self.room_management_table.setHorizontalHeaderLabels(
-            ["房号", "房型", "楼层", "房间电话", "备注"]
+            ["ID", "房号", "房型", "楼层", "房间电话", "备注"]
         )
         self.room_management_table.horizontalHeader().setStretchLastSection(True)
         self.room_management_table.verticalHeader().setVisible(False)
         self.room_management_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.room_management_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.room_management_table.setAlternatingRowColors(False)
+        self.room_management_table.setColumnHidden(0, True)
 
         table_layout.addLayout(toolbar)
         table_layout.addWidget(self.room_management_table)

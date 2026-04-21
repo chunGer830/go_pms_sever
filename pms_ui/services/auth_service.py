@@ -40,8 +40,14 @@ class AuthService:
         )
 
     def update_hotel_room(self, payload: dict[str, object]) -> dict[str, object]:
+        raw_id = str(payload.get("id", "")).strip()
+        try:
+            room_id = int(raw_id)
+        except (TypeError, ValueError):
+            room_id = 0
+
         request_payload = {
-            "id": str(payload.get("id", "")).strip(),
+            "id": room_id,
             "room_no": str(payload.get("room_no", "")).strip(),
             "room_type_name": str(payload.get("room_type_name", "")).strip(),
             "room_type_code": str(payload.get("room_type_code", "")).strip(),
@@ -84,7 +90,14 @@ class AuthService:
         )
 
     def update_room_type(self, payload: dict[str, object]) -> dict[str, object]:
+        raw_id = str(payload.get("id", "")).strip()
+        try:
+            room_type_id = int(raw_id)
+        except (TypeError, ValueError):
+            room_type_id = 0
+
         request_payload = {
+            "id": room_type_id,
             "type_name": str(payload.get("name", "")).strip(),
             "type_code": str(payload.get("code", "")).strip(),
             "max_occupancy": int(payload.get("occupancy", 0) or 0),

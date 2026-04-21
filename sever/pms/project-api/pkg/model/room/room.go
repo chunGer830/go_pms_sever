@@ -14,6 +14,7 @@ type HotelRoomReq struct {
 
 type SaveRoomTypeReq struct {
 	Id           int64  `json:"id" form:"id"`
+	HotelID      int64  `json:"hotel_id" form:"hotel_id"`
 	TypeName     string `json:"type_name" form:"type_name"`
 	TypeCode     string `json:"type_code" form:"type_code"`
 	MaxOccupancy int    `json:"max_occupancy" form:"max_occupancy"`
