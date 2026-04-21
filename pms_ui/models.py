@@ -40,6 +40,16 @@ class RoomStatus:
 
 
 @dataclass(slots=True)
+class RoomRecord:
+    room_no: str
+    room_type: str
+    floor: str
+    id: str = ""
+    phone_ext: str = ""
+    remark: str = ""
+
+
+@dataclass(slots=True)
 class Member:
     member_no: str
     name: str

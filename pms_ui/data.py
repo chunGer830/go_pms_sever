@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pms_ui.models import Member, RechargeRule, Reservation, RoomStatus, RoomType
+from pms_ui.models import Member, RechargeRule, Reservation, RoomRecord, RoomStatus, RoomType
 
 
 def get_room_types() -> list[RoomType]:
@@ -89,6 +89,20 @@ def get_room_statuses() -> list[RoomStatus]:
             "已放房",
             ["03-24 08:40 完成查房", "03-24 08:45 状态切换为空净"],
         ),
+    ]
+
+
+def get_room_records() -> list[RoomRecord]:
+    return [
+        RoomRecord(
+            room_no=room.room_no,
+            room_type=room.room_type,
+            floor=room.floor,
+            id="",
+            phone_ext=f"6{room.room_no[-3:]}",
+            remark=room.last_action,
+        )
+        for room in get_room_statuses()
     ]
 
 

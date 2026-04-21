@@ -24,6 +24,7 @@ message  RegisterResponse{
 message LoginMessage {
   string username = 1;
   string password = 2;
+  string token = 3;
 }
 message LoginResponse{
   MemberMessage member = 1;
@@ -55,4 +56,5 @@ service LoginService {
   rpc Register(RegisterMessage) returns (RegisterResponse) {}
   rpc Login(LoginMessage) returns (LoginResponse) {}
   rpc ChangePassword(ChangePasswordMessage) returns (ChangePasswordResponse) {}
+  rpc TokenVerify(LoginMessage) returns (LoginResponse) {}
 }

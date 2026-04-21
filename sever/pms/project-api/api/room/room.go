@@ -4,9 +4,10 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	roomModel "pms.com/project-api/pkg/model/room"
 	common "pms.com/project-common"
 	"pms.com/project-common/errs"
-	"pms.com/project-grpc/room"
+	"pms.com/project-grpc/room/room_type"
 	"time"
 )
 
@@ -18,20 +19,325 @@ func New() *HandlerRoom {
 }
 
 func (r *HandlerRoom) roomType(c *gin.Context) {
-	//1.接收参数
 	result := &common.Result{}
 
-	//2.校验参数
-	//3.调用grpc 获取响应
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	msg := &room.RoomTypeMessage{}
-	_, err := RoomServiceClient.RoomType(ctx, msg)
+
+	msg := &room_type.RoomTypeMessage{
+		HotelId: id,
+	}
+
+	roomRsp, err := RoomServiceClient.RoomType(ctx, msg)
 	if err != nil {
 		code, msg := errs.ParseGrpcError(err)
 		c.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
-	//4.返回结果
-	c.JSON(http.StatusOK, result.Sucess(""))
+
+	c.JSON(http.StatusOK, result.Sucess(roomRsp))
+}
+
+func (r *HandlerRoom) saveRoomType(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.SaveRoomTypeReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.SaveRoomTypeMessage{
+		HotelId:      id,
+		TypeName:     req.TypeName,
+		TypeCode:     req.TypeCode,
+		MaxOccupancy: int32(req.MaxOccupancy),
+		BasePrice:    req.BasePrice,
+		Quantity:     int32(req.Quantity),
+		Status:       int32(req.Status),
+	}
+
+	_, err = RoomServiceClient.SaveRoomType(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("添加成功"))
+}
+
+func (r *HandlerRoom) updateRoomType(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.SaveRoomTypeReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.UpdateRoomTypeMessage{
+		HotelId:      id,
+		TypeName:     req.TypeName,
+		TypeCode:     req.TypeCode,
+		MaxOccupancy: int32(req.MaxOccupancy),
+		BasePrice:    req.BasePrice,
+		Quantity:     int32(req.Quantity),
+		Status:       int32(req.Status),
+	}
+
+	_, err = RoomServiceClient.UpdateRoomType(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("修改成功"))
+}
+
+func (r *HandlerRoom) deleteRoomType(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.SaveRoomTypeReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.DeleteRoomTypeMessage{
+		HotelId:  id,
+		TypeCode: req.TypeCode,
+	}
+
+	_, err = RoomServiceClient.DeleteRoomType(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("删除成功"))
+}
+
+func (r *HandlerRoom) hotelRoom(c *gin.Context) {
+	result := &common.Result{}
+
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.HotelRoomMessage{
+		HotelId: id,
+	}
+
+	roomRsp, err := RoomServiceClient.HotelRoom(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess(roomRsp))
+}
+
+func (r *HandlerRoom) saveHotelRoom(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.HotelRoomReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.SaveHotelRoomMessage{
+		HotelId:      id,
+		RoomNo:       req.RoomNo,
+		RoomTypeName: req.RoomTypeName,
+		RoomTypeCode: req.RoomTypeCode,
+		FloorNo:      req.FloorNo,
+		PhoneExt:     req.PhoneExt,
+		Description:  req.Description,
+	}
+
+	_, err = RoomServiceClient.SaveHotelRoom(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("添加成功"))
+}
+
+func (r *HandlerRoom) updateHotelRoom(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.HotelRoomReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.UpdateHotelRoomMessage{
+		Id:           req.Id,
+		HotelId:      id,
+		RoomNo:       req.RoomNo,
+		RoomTypeName: req.RoomTypeName,
+		RoomTypeCode: req.RoomTypeCode,
+		FloorNo:      req.FloorNo,
+		PhoneExt:     req.PhoneExt,
+		Description:  req.Description,
+	}
+
+	_, err = RoomServiceClient.UpdateHotelRoom(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("修改成功"))
+}
+
+func (r *HandlerRoom) deleteHotelRoom(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.HotelRoomReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.DeleteHotelRoomMessage{
+		HotelId: id,
+		RoomNo:  req.RoomNo,
+	}
+
+	_, err = RoomServiceClient.DeleteHotelRoom(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("删除成功"))
 }

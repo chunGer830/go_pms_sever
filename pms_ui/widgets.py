@@ -129,7 +129,7 @@ class RoomStatusCard(QPushButton):
         super().__init__(parent)
         self.room = room
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumHeight(150)
+        self.setMinimumHeight(126)
         self.setStyleSheet(self._style_for_room())
         self._build_text()
 
@@ -142,7 +142,7 @@ class RoomStatusCard(QPushButton):
             border: 1px solid #DDE5EF;
             border-left: 5px solid {accent};
             border-radius: 16px;
-            padding: 14px;
+            padding: 10px 12px;
             text-align: left;
             font-size: 13px;
             font-weight: 500;

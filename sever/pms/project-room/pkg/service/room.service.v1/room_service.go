@@ -2,22 +2,185 @@ package room_service_v1
 
 import (
 	"context"
-	"pms.com/project-grpc/room"
+	"go.uber.org/zap"
+	common "pms.com/project-common"
+	"pms.com/project-common/errs"
+	"pms.com/project-common/model"
+	"pms.com/project-grpc/room/room_type"
 	"pms.com/project-room/internal/dao"
+	"pms.com/project-room/internal/data/room_type_data"
 	"pms.com/project-room/internal/repo"
 )
 
 type RoomService struct {
-	room.UnimplementedRoomServiceServer
-	cache repo.Cache
+	room_type.UnimplementedRoomServiceServer
+	cache        repo.Cache
+	roomTypeRepo repo.RoomTypeRepo
 }
 
 func New() *RoomService {
 	return &RoomService{
-		cache: dao.Rc,
+		cache:        dao.Rc,
+		roomTypeRepo: dao.NewRoomTypeDao(),
 	}
 }
 
-func (s *RoomService) RoomType(ctx context.Context, msg *room.RoomTypeMessage) (*room.RoomTypeResponse, error) {
-	return &room.RoomTypeResponse{}, nil
+func (s *RoomService) RoomType(ctx context.Context, msg *room_type.RoomTypeMessage) (*room_type.RoomTypeResponse, error) {
+	roomTypes, err := s.roomTypeRepo.FindRoomTypes(ctx, msg.HotelId)
+	if err != nil {
+		zap.L().Error("RoomType db FindRoomTypes err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+
+	if len(roomTypes) == 0 {
+		return nil, errs.GrpcError(model.NoRoomType)
+	}
+
+	list := make([]*room_type.RoomTypeItem, 0, len(roomTypes))
+	for _, rt := range roomTypes {
+
+		list = append(list, &room_type.RoomTypeItem{
+			Id:           rt.ID,
+			TypeName:     rt.TypeName,
+			TypeCode:     rt.TypeCode,
+			MaxOccupancy: int32(rt.MaxOccupancy),
+			BasePrice:    rt.BasePrice,
+			Quantity:     int32(rt.Quantity),
+			Status:       int32(rt.Status),
+		})
+	}
+
+	return &room_type.RoomTypeResponse{
+		List: list,
+	}, nil
+}
+
+func (s *RoomService) SaveRoomType(ctx context.Context, msg *room_type.SaveRoomTypeMessage) (*room_type.SaveRoomTypeResponse, error) {
+	NewRoomType := &room_type_data.RoomType{
+		HotelID:      msg.HotelId,
+		TypeCode:     msg.TypeCode,
+		TypeName:     msg.TypeName,
+		MaxOccupancy: int(msg.MaxOccupancy),
+		BasePrice:    msg.BasePrice,
+		Quantity:     int(msg.Quantity),
+		Status:       int(msg.Status),
+	}
+	err := s.roomTypeRepo.CreateRoomType(ctx, NewRoomType)
+	if err != nil {
+		zap.L().Error("CreateRoomType db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.SaveRoomTypeResponse{}, nil
+}
+
+func (s *RoomService) UpdateRoomType(ctx context.Context, msg *room_type.UpdateRoomTypeMessage) (*room_type.UpdateRoomTypeResponse, error) {
+	NewRoomType := &room_type_data.RoomType{
+		ID:           msg.Id,
+		HotelID:      msg.HotelId,
+		TypeCode:     msg.TypeCode,
+		TypeName:     msg.TypeName,
+		MaxOccupancy: int(msg.MaxOccupancy),
+		BasePrice:    msg.BasePrice,
+		Quantity:     int(msg.Quantity),
+		Status:       int(msg.Status),
+	}
+	err := s.roomTypeRepo.UpdateRoomType(ctx, NewRoomType)
+	if err != nil {
+		zap.L().Error("UpdateRoomType db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.UpdateRoomTypeResponse{}, nil
+}
+
+func (s *RoomService) DeleteRoomType(ctx context.Context, msg *room_type.DeleteRoomTypeMessage) (*room_type.DeleteRoomTypeResponse, error) {
+	NewRoomType := &room_type_data.RoomType{
+		HotelID:  msg.HotelId,
+		TypeCode: msg.TypeCode,
+	}
+	err := s.roomTypeRepo.DeleteRoomType(ctx, NewRoomType)
+	if err != nil {
+		zap.L().Error("DeleteRoomType db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.DeleteRoomTypeResponse{}, nil
+}
+
+func (s *RoomService) HotelRoom(ctx context.Context, msg *room_type.HotelRoomMessage) (*room_type.HotelRoomResponse, error) {
+	HotelRooms, err := s.roomTypeRepo.FindHotelRoom(ctx, msg.HotelId)
+	if err != nil {
+		zap.L().Error("HotelRoom db FindHotelRoom err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+
+	if len(HotelRooms) == 0 {
+		return nil, errs.GrpcError(model.NoHotelRoom)
+	}
+
+	list := make([]*room_type.HotelRoomItem, 0, len(HotelRooms))
+	for _, rt := range HotelRooms {
+
+		list = append(list, &room_type.HotelRoomItem{
+			Id:           rt.ID,
+			RoomNo:       rt.RoomNo,
+			RoomTypeName: rt.RoomTypeName,
+			FloorNo:      common.StrVal(rt.FloorNo),
+			Building:     common.StrVal(rt.Building),
+			PhoneExt:     common.StrVal(rt.PhoneExt),
+			Description:  common.StrVal(rt.Description),
+		})
+	}
+
+	return &room_type.HotelRoomResponse{
+		List: list,
+	}, nil
+}
+
+func (s *RoomService) SaveHotelRoom(ctx context.Context, msg *room_type.SaveHotelRoomMessage) (*room_type.SaveHotelRoomResponse, error) {
+	NewHotelRoom := &room_type_data.HotelRoom{
+		HotelID:      msg.HotelId,
+		RoomNo:       msg.RoomNo,
+		RoomTypeName: msg.RoomTypeName,
+		RoomTypeCode: msg.RoomTypeCode,
+		FloorNo:      common.StrPtr(msg.FloorNo),
+		PhoneExt:     common.StrPtr(msg.PhoneExt),
+		Description:  common.StrPtr(msg.Description),
+	}
+	err := s.roomTypeRepo.CreateHotelRoom(ctx, NewHotelRoom)
+	if err != nil {
+		zap.L().Error("CreateHotelRoom db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.SaveHotelRoomResponse{}, nil
+}
+
+func (s *RoomService) UpdateHotelRoom(ctx context.Context, msg *room_type.UpdateHotelRoomMessage) (*room_type.UpdateHotelRoomResponse, error) {
+	NewHotelRoom := &room_type_data.HotelRoom{
+		ID:           msg.Id,
+		HotelID:      msg.HotelId,
+		RoomNo:       msg.RoomNo,
+		RoomTypeName: msg.RoomTypeName,
+		RoomTypeCode: msg.RoomTypeCode,
+		FloorNo:      common.StrPtr(msg.FloorNo),
+		PhoneExt:     common.StrPtr(msg.PhoneExt),
+		Description:  common.StrPtr(msg.Description),
+	}
+	err := s.roomTypeRepo.UpdateHotelRoom(ctx, NewHotelRoom)
+	if err != nil {
+		zap.L().Error("UpdateHotelRoom db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.UpdateHotelRoomResponse{}, nil
+}
+
+func (s *RoomService) DeleteHotelRoom(ctx context.Context, msg *room_type.DeleteHotelRoomMessage) (*room_type.DeleteHotelRoomResponse, error) {
+	NewHotelRoom := &room_type_data.HotelRoom{
+		HotelID: msg.HotelId,
+		RoomNo:  msg.RoomNo,
+	}
+	err := s.roomTypeRepo.DeleteHotelRoom(ctx, NewHotelRoom)
+	if err != nil {
+		zap.L().Error("DeleteHotelRoom db save err ", zap.Error(err))
+		return nil, errs.GrpcError(model.DBError)
+	}
+	return &room_type.DeleteHotelRoomResponse{}, nil
 }

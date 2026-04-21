@@ -8,7 +8,7 @@ import (
 	"net"
 	"pms.com/project-common/discovery"
 	"pms.com/project-common/logs"
-	"pms.com/project-grpc/room"
+	"pms.com/project-grpc/room/room_type"
 	"pms.com/project-room/config"
 	room_service_v1 "pms.com/project-room/pkg/service/room.service.v1"
 )
@@ -51,7 +51,7 @@ func RegisterGrpc() *grpc.Server {
 	c := gRPCConfig{
 		Addr: config.C.GC.Addr,
 		RegisterFunc: func(g *grpc.Server) {
-			room.RegisterRoomServiceServer(g, room_service_v1.New())
+			room_type.RegisterRoomServiceServer(g, room_service_v1.New())
 		}}
 	s := grpc.NewServer()
 	c.RegisterFunc(s)

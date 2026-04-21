@@ -1,9 +1,8 @@
 package jwts
 
 import (
-	"fmt"
+	"errors"
 	"github.com/golang-jwt/jwt/v4"
-	"log"
 	"time"
 )
 
@@ -37,18 +36,23 @@ func CreateToken(val string, exp time.Duration, refreshExp time.Duration, secret
 	}
 }
 
-func ParseToken(tokenString string, secret string) {
+func ParseToken(tokenString string, secret string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(secret), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		fmt.Printf("%v \n", claims)
+		val := claims["token"].(string)
+		exp := int64(claims["exp"].(float64))
+		if exp <= time.Now().Unix() {
+			return "", errors.New("token过期了")
+		}
+		return val, nil
 	} else {
-		fmt.Println(err)
+		return "", err
 	}
 }

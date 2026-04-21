@@ -49,6 +49,13 @@ class AppShell(QMainWindow):
         self.main_window = PMSMainWindow()
         self.main_window.logout_requested.connect(self._handle_logout)
         self.main_window.room_type_refresh_requested.connect(self._handle_room_type_refresh)
+        self.main_window.room_management_refresh_requested.connect(self._handle_room_management_refresh)
+        self.main_window.room_management_create_requested.connect(self._handle_room_management_create)
+        self.main_window.room_management_update_requested.connect(self._handle_room_management_update)
+        self.main_window.room_management_delete_requested.connect(self._handle_room_management_delete)
+        self.main_window.room_type_create_requested.connect(self._handle_room_type_create)
+        self.main_window.room_type_update_requested.connect(self._handle_room_type_update)
+        self.main_window.room_type_delete_requested.connect(self._handle_room_type_delete)
 
         self.stack.addWidget(self.login_view)
         self.stack.addWidget(self.main_window)
@@ -88,6 +95,7 @@ class AppShell(QMainWindow):
         self.token_type = str(token_list.get("tokenType", ""))
         self.access_token_exp = int(token_list.get("accessTokenExp", 0) or 0)
         self.auth_service.set_auth_token(self.access_token, self.token_type)
+        self.main_window.show_dashboard()
         self.stack.setCurrentIndex(1)
 
     def _handle_unauthorized(self, result: dict[str, object]) -> bool:
@@ -102,6 +110,7 @@ class AppShell(QMainWindow):
         if self._handle_unauthorized(result):
             return
         if not result.get("success"):
+            self.main_window.set_room_type_items([])
             self._show_message_dialog("房型控制", str(result.get("message", "获取房型数据失败")), success=False)
             return
 
@@ -109,14 +118,126 @@ class AppShell(QMainWindow):
         if isinstance(data, dict) and isinstance(data.get("list"), list):
             items = [item for item in data["list"] if isinstance(item, dict)]
         elif isinstance(data, dict):
-            items = [data]
+            items = [data] if data else []
         elif isinstance(data, list):
             items = [item for item in data if isinstance(item, dict)]
+        elif data in (None, "", ()):
+            items = []
         else:
+            self.main_window.set_room_type_items([])
             self._show_message_dialog("房型控制", "房型数据格式不正确。", success=False)
             return
 
         self.main_window.set_room_type_items(items)
+
+    def _handle_room_management_refresh(self) -> None:
+        result = self.auth_service.get_hotel_rooms()
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self.main_window.set_room_management_items([])
+            self._show_message_dialog("房间管理", str(result.get("message", "获取房间数据失败")), success=False)
+            return
+
+        data = result.get("data")
+        if isinstance(data, dict) and isinstance(data.get("list"), list):
+            items = [item for item in data["list"] if isinstance(item, dict)]
+        elif isinstance(data, dict):
+            items = [data] if data else []
+        elif isinstance(data, list):
+            items = [item for item in data if isinstance(item, dict)]
+        elif data in (None, "", ()):
+            items = []
+        else:
+            self.main_window.set_room_management_items([])
+            self._show_message_dialog("房间管理", "房间数据格式不正确。", success=False)
+            return
+
+        self.main_window.set_room_management_items(items)
+
+    def _handle_room_management_create(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.save_hotel_room(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("新增房间", str(result.get("message", "新增房间失败")), success=False)
+            return
+
+        self._show_message_dialog("新增房间", "新增成功", success=True)
+        self._handle_room_management_refresh()
+
+    def _handle_room_management_update(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.update_hotel_room(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("编辑房间", str(result.get("message", "修改房间失败")), success=False)
+            return
+
+        self._show_message_dialog("编辑房间", "修改成功", success=True)
+        self._handle_room_management_refresh()
+
+    def _handle_room_management_delete(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.delete_hotel_room(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("删除房间", str(result.get("message", "删除房间失败")), success=False)
+            return
+
+        self._show_message_dialog("删除房间", "删除成功", success=True)
+        self._handle_room_management_refresh()
+
+    def _handle_room_type_create(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.save_room_type(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("新增房型", str(result.get("message", "新增房型失败")), success=False)
+            return
+
+        data = result.get("data")
+        if data == "添加成功":
+            self._show_message_dialog("新增房型", "添加成功", success=True)
+            self._handle_room_type_refresh()
+            return
+
+        self._show_message_dialog("新增房型", str(data or result.get("message") or "添加成功"), success=True)
+        self._handle_room_type_refresh()
+
+    def _handle_room_type_update(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.update_room_type(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("编辑房型", str(result.get("message", "修改房型失败")), success=False)
+            return
+
+        data = result.get("data")
+        if data == "添加成功":
+            self._show_message_dialog("编辑房型", "修改成功", success=True)
+            self._handle_room_type_refresh()
+            return
+
+        self._show_message_dialog("编辑房型", str(data or result.get("message") or "修改成功"), success=True)
+        self._handle_room_type_refresh()
+
+    def _handle_room_type_delete(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.delete_room_type(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("删除房型", str(result.get("message", "删除房型失败")), success=False)
+            return
+
+        data = result.get("data")
+        if data == "添加成功":
+            self._show_message_dialog("删除房型", "删除成功", success=True)
+            self._handle_room_type_refresh()
+            return
+
+        self._show_message_dialog("删除房型", str(data or result.get("message") or "删除成功"), success=True)
+        self._handle_room_type_refresh()
 
     def _show_message_dialog(self, title: str, message: str, *, success: bool) -> None:
         dialog = QMessageBox(self)
@@ -175,6 +296,7 @@ class AppShell(QMainWindow):
         self.auth_service.clear_auth_token()
         self.login_view.password_edit.clear()
         self.login_view.username_edit.clear()
+        self.main_window.show_dashboard()
         self.stack.setCurrentIndex(0)
         if show_message:
             self._show_message_dialog("退出登录", "已退出登录。", success=True)

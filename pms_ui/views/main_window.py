@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QSpinBox,
@@ -23,13 +24,27 @@ from PyQt6.QtWidgets import (
 )
 
 from pms_ui import data
+from pms_ui.models import RoomRecord, RoomStatus
 from pms_ui.widgets import GlassCard, MetricCard, RoomStatusCard, SectionTitle, SidebarSection
 
 
 class AddRoomTypeDialog(QDialog):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        title_text: str = "新增房型",
+        hint_text: str = "录入房型基础信息。当前保存为前端临时数据。",
+        initial_payload: dict[str, object] | None = None,
+        code_editable: bool = True,
+        room_count_editable: bool = True,
+    ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("新增房型")
+        self._title_text = title_text
+        self._hint_text = hint_text
+        self._code_editable = code_editable
+        self._room_count_editable = room_count_editable
+        self.setWindowTitle(title_text)
         self.setModal(True)
         self.resize(460, 520)
         self.setStyleSheet(
@@ -53,15 +68,17 @@ class AddRoomTypeDialog(QDialog):
             """
         )
         self._build_ui()
+        if initial_payload:
+            self.set_payload(initial_payload)
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(14)
 
-        title = QLabel("新增房型")
+        title = QLabel(self._title_text)
         title.setStyleSheet("font-size: 20px; font-weight: 700; color: #1E2A3B;")
-        hint = QLabel("录入房型基础信息。当前保存为前端临时数据。")
+        hint = QLabel(self._hint_text)
         hint.setProperty("role", "subtle")
         hint.setWordWrap(True)
 
@@ -69,14 +86,19 @@ class AddRoomTypeDialog(QDialog):
         self.name_edit.setPlaceholderText("房型名称")
         self.code_edit = QLineEdit()
         self.code_edit.setPlaceholderText("房型编码")
+        self.code_edit.setReadOnly(not self._code_editable)
 
         self.status_box = QComboBox()
-        self.status_box.addItems(["开放预订", "限量预订", "维护中"])
+        self.status_box.addItems(["启用", "停用"])
 
         self.room_count_spin = QSpinBox()
         self.room_count_spin.setRange(1, 999)
         self.room_count_spin.setPrefix("房量 ")
         self.room_count_spin.setValue(10)
+        self.room_count_spin.setReadOnly(not self._room_count_editable)
+        self.room_count_spin.setButtonSymbols(
+            QSpinBox.ButtonSymbols.UpDownArrows if self._room_count_editable else QSpinBox.ButtonSymbols.NoButtons
+        )
 
         self.price_spin = QSpinBox()
         self.price_spin.setRange(0, 99999)
@@ -84,7 +106,7 @@ class AddRoomTypeDialog(QDialog):
         self.price_spin.setValue(888)
 
         self.occupancy_box = QComboBox()
-        self.occupancy_box.addItems(["1 人", "2 人", "3 人", "4 人"])
+        self.occupancy_box.addItems(["1 人", "2 人", "3 人", "4 人","5 人", "6 人", "7 人", "8人"])
 
         fields = [
             self.name_edit,
@@ -111,6 +133,28 @@ class AddRoomTypeDialog(QDialog):
             layout.addWidget(widget)
         layout.addWidget(buttons)
 
+    def set_payload(self, payload: dict[str, object]) -> None:
+        self.name_edit.setText(str(payload.get("name", payload.get("type_name", ""))))
+        self.code_edit.setText(str(payload.get("code", payload.get("type_code", ""))))
+        self.room_count_spin.setValue(int(payload.get("total_rooms", payload.get("quantity", 1)) or 1))
+
+        raw_price = payload.get("base_price", 0)
+        try:
+            base_price = int(float(raw_price))
+        except (TypeError, ValueError):
+            base_price = 0
+        self.price_spin.setValue(max(base_price, 0))
+
+        occupancy = int(payload.get("occupancy", payload.get("max_occupancy", 1)) or 1)
+        occupancy = min(max(occupancy, 1), self.occupancy_box.count())
+        self.occupancy_box.setCurrentText(f"{occupancy} 人")
+
+        status = str(payload.get("status", "启用")).strip()
+        if status in {"1", "启用"}:
+            self.status_box.setCurrentText("启用")
+        elif status in {"0", "停用"}:
+            self.status_box.setCurrentText("停用")
+
     def get_payload(self) -> dict[str, object]:
         return {
             "name": self.name_edit.text().strip(),
@@ -122,13 +166,148 @@ class AddRoomTypeDialog(QDialog):
         }
 
 
+class AddHotelRoomDialog(QDialog):
+    def __init__(
+        self,
+        room_type_options: list[dict[str, str]],
+        parent: QWidget | None = None,
+        *,
+        title_text: str = "新增房间",
+        hint_text: str = "录入具体房号信息，房型与房型编码从房型控制中选择。",
+        initial_payload: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.room_type_options = room_type_options
+        self._title_text = title_text
+        self._hint_text = hint_text
+        self.setWindowTitle(title_text)
+        self.setModal(True)
+        self.resize(460, 420)
+        self.setStyleSheet(
+            """
+            QDialog {
+                background-color: #FFFFFF;
+            }
+            QLabel {
+                color: #1E2A3B;
+            }
+            QLineEdit, QComboBox {
+                background-color: #FFFFFF;
+                color: #1F2E42;
+                border: 1px solid #D8E1EC;
+                border-radius: 12px;
+                padding: 10px 12px;
+            }
+            QPushButton {
+                min-width: 88px;
+            }
+            """
+        )
+        self._build_ui()
+        if initial_payload:
+            self.set_payload(initial_payload)
+
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(14)
+
+        title = QLabel(self._title_text)
+        title.setStyleSheet("font-size: 20px; font-weight: 700; color: #1E2A3B;")
+        hint = QLabel(self._hint_text)
+        hint.setProperty("role", "subtle")
+        hint.setWordWrap(True)
+
+        self.room_no_edit = QLineEdit()
+        self.room_no_edit.setPlaceholderText("房号")
+
+        self.room_type_box = QComboBox()
+        for option in self.room_type_options:
+            self.room_type_box.addItem(option["type_name"], option["type_code"])
+
+        self.room_type_code_edit = QLineEdit()
+        self.room_type_code_edit.setPlaceholderText("房型编码")
+        self.room_type_code_edit.setReadOnly(True)
+
+        self.floor_no_edit = QLineEdit()
+        self.floor_no_edit.setPlaceholderText("楼层")
+
+        self.phone_ext_edit = QLineEdit()
+        self.phone_ext_edit.setPlaceholderText("房间电话")
+
+        self.description_edit = QLineEdit()
+        self.description_edit.setPlaceholderText("备注")
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        save_button = buttons.button(QDialogButtonBox.StandardButton.Save)
+        cancel_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        if save_button is not None:
+            save_button.setText("保存")
+        if cancel_button is not None:
+            cancel_button.setText("取消")
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        self.room_type_box.currentIndexChanged.connect(self._sync_room_type_code)
+        self._sync_room_type_code()
+
+        layout.addWidget(title)
+        layout.addWidget(hint)
+        layout.addWidget(self.room_no_edit)
+        layout.addWidget(self.room_type_box)
+        layout.addWidget(self.room_type_code_edit)
+        layout.addWidget(self.floor_no_edit)
+        layout.addWidget(self.phone_ext_edit)
+        layout.addWidget(self.description_edit)
+        layout.addWidget(buttons)
+
+    def _sync_room_type_code(self) -> None:
+        self.room_type_code_edit.setText(str(self.room_type_box.currentData() or ""))
+
+    def set_payload(self, payload: dict[str, str]) -> None:
+        self.room_no_edit.setText(payload.get("room_no", ""))
+        room_type_code = payload.get("room_type_code", "")
+        if room_type_code:
+            index = self.room_type_box.findData(room_type_code)
+            if index >= 0:
+                self.room_type_box.setCurrentIndex(index)
+            else:
+                self.room_type_box.setCurrentText(payload.get("room_type_name", ""))
+        elif payload.get("room_type_name"):
+            self.room_type_box.setCurrentText(payload.get("room_type_name", ""))
+        self.floor_no_edit.setText(payload.get("floor_no", ""))
+        self.phone_ext_edit.setText(payload.get("phone_ext", ""))
+        self.description_edit.setText(payload.get("description", ""))
+        self._sync_room_type_code()
+
+    def get_payload(self) -> dict[str, str]:
+        return {
+            "id": payload.get("id", ""),
+            "room_no": self.room_no_edit.text().strip(),
+            "room_type_name": self.room_type_box.currentText().strip(),
+            "room_type_code": self.room_type_code_edit.text().strip(),
+            "floor_no": self.floor_no_edit.text().strip(),
+            "phone_ext": self.phone_ext_edit.text().strip(),
+            "description": self.description_edit.text().strip(),
+        }
+
+
 class PMSMainWindow(QWidget):
     logout_requested = pyqtSignal()
     room_type_refresh_requested = pyqtSignal()
+    room_type_create_requested = pyqtSignal(dict)
+    room_type_update_requested = pyqtSignal(dict)
+    room_type_delete_requested = pyqtSignal(dict)
+    room_management_refresh_requested = pyqtSignal()
+    room_management_create_requested = pyqtSignal(dict)
+    room_management_update_requested = pyqtSignal(dict)
+    room_management_delete_requested = pyqtSignal(dict)
 
     def __init__(self) -> None:
         super().__init__()
         self.room_statuses = data.get_room_statuses()
+        self.room_records = data.get_room_records()
+        self.room_type_options: list[dict[str, str]] = []
         self.selected_room = None
         self.room_status_cards: list[RoomStatusCard] = []
         self._build_ui()
@@ -148,6 +327,7 @@ class PMSMainWindow(QWidget):
         self.stack = QStackedWidget()
         self.stack.addWidget(self._build_dashboard_page())
         self.stack.addWidget(self._build_room_type_page())
+        self.stack.addWidget(self._build_room_management_page())
         self.stack.addWidget(self._build_room_status_page())
         self.stack.addWidget(self._build_reservation_page())
         self.stack.addWidget(self._build_member_list_page())
@@ -165,32 +345,197 @@ class PMSMainWindow(QWidget):
         payload = dialog.get_payload()
         if not payload["name"] or not payload["code"]:
             return
+        self.room_type_create_requested.emit(payload)
 
-        self.room_type_table.insertRow(self.room_type_table.rowCount())
-        values = [
-            str(payload["name"]),
-            str(payload["code"]),
-            str(payload["total_rooms"]),
-            f"¥{payload['base_price']}",
-            str(payload["occupancy"]),
-            str(payload["status"]),
-        ]
-        row_index = self.room_type_table.rowCount() - 1
-        for col_index, value in enumerate(values):
-            self.room_type_table.setItem(row_index, col_index, QTableWidgetItem(value))
+    def _open_edit_room_type_dialog(self) -> None:
+        row_index = self.room_type_table.currentRow()
+        if row_index < 0:
+            return
+
+        dialog = AddRoomTypeDialog(
+            self,
+            title_text="编辑房型",
+            hint_text="修改房型基础信息。",
+            initial_payload=self._room_type_payload_from_row(row_index),
+            code_editable=False,
+            room_count_editable=False,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        payload = dialog.get_payload()
+        if not payload["name"] or not payload["code"]:
+            return
+        self.room_type_update_requested.emit(payload)
 
     def _reload_room_type_table(self) -> None:
         self.room_type_refresh_requested.emit()
 
+    def _reload_room_management_table(self) -> None:
+        self.room_management_refresh_requested.emit()
+
+    def _open_add_room_management_dialog(self) -> None:
+        if not self.room_type_options:
+            return
+
+        dialog = AddHotelRoomDialog(self.room_type_options, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        payload = dialog.get_payload()
+        if not payload["room_no"] or not payload["room_type_name"] or not payload["room_type_code"]:
+            return
+        self.room_management_create_requested.emit(payload)
+
+    def _open_edit_room_management_dialog(self) -> None:
+        if not self.room_type_options:
+            return
+
+        row_index = self.room_management_table.currentRow()
+        if row_index < 0:
+            return
+
+        dialog = AddHotelRoomDialog(
+            self.room_type_options,
+            self,
+            title_text="编辑房间",
+            hint_text="修改具体房间信息，房型与房型编码从房型控制中选择。",
+            initial_payload=self._room_management_payload_from_row(row_index),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        payload = dialog.get_payload()
+        if not payload["room_no"] or not payload["room_type_name"] or not payload["room_type_code"]:
+            return
+        self.room_management_update_requested.emit(payload)
+
+    def _delete_selected_room_management(self) -> None:
+        row_index = self.room_management_table.currentRow()
+        if row_index < 0:
+            return
+
+        room_no_item = self.room_management_table.item(row_index, 0)
+        room_no = room_no_item.text().strip() if room_no_item else ""
+        if not room_no:
+            return
+        self.room_management_delete_requested.emit({"room_no": room_no})
+
     def _delete_selected_room_type(self) -> None:
-        selected_rows = sorted({index.row() for index in self.room_type_table.selectedIndexes()}, reverse=True)
-        for row_index in selected_rows:
-            self.room_type_table.removeRow(row_index)
+        row_index = self.room_type_table.currentRow()
+        if row_index < 0:
+            return
+
+        code_item = self.room_type_table.item(row_index, 1)
+        type_code = code_item.text().strip() if code_item else ""
+        if not type_code:
+            return
+
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("删除房型")
+        dialog.setText("确定删除吗？所有该房型的房间信息也会删除。")
+        dialog.setIcon(QMessageBox.Icon.NoIcon)
+        dialog.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel
+        )
+        dialog.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        dialog.setStyleSheet(
+            """
+            QMessageBox {
+                background-color: #FFFFFF;
+            }
+            QLabel {
+                color: #1E2A3B;
+                min-width: 280px;
+                min-height: 72px;
+                font-size: 15px;
+            }
+            QPushButton {
+                background-color: #2F7AF8;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 8px 18px;
+                min-width: 88px;
+            }
+            QPushButton:hover {
+                background-color: #1F68E5;
+            }
+            """
+        )
+        yes_button = dialog.button(QMessageBox.StandardButton.Yes)
+        cancel_button = dialog.button(QMessageBox.StandardButton.Cancel)
+        if yes_button is not None:
+            yes_button.setText("确定")
+        if cancel_button is not None:
+            cancel_button.setText("取消")
+        if dialog.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        self.room_type_delete_requested.emit({"type_code": type_code})
+
+    def show_dashboard(self) -> None:
+        self.stack.setCurrentIndex(0)
+
+    def _room_type_payload_from_row(self, row_index: int) -> dict[str, object]:
+        name_item = self.room_type_table.item(row_index, 0)
+        code_item = self.room_type_table.item(row_index, 1)
+        quantity_item = self.room_type_table.item(row_index, 2)
+        price_item = self.room_type_table.item(row_index, 3)
+        occupancy_item = self.room_type_table.item(row_index, 4)
+        status_item = self.room_type_table.item(row_index, 5)
+
+        raw_price = price_item.text().replace("¥", "").strip() if price_item else ""
+        try:
+            base_price = int(float(raw_price))
+        except (TypeError, ValueError):
+            base_price = 0
+
+        return {
+            "name": name_item.text().strip() if name_item else "",
+            "code": code_item.text().strip() if code_item else "",
+            "total_rooms": int(quantity_item.text()) if quantity_item and quantity_item.text().isdigit() else 1,
+            "base_price": base_price,
+            "occupancy": int(occupancy_item.text()) if occupancy_item and occupancy_item.text().isdigit() else 1,
+            "status": status_item.text().strip() if status_item else "启用",
+        }
+
+    def _room_management_payload_from_row(self, row_index: int) -> dict[str, str]:
+        room_no_item = self.room_management_table.item(row_index, 0)
+        room_type_item = self.room_management_table.item(row_index, 1)
+        floor_item = self.room_management_table.item(row_index, 2)
+        phone_item = self.room_management_table.item(row_index, 3)
+        remark_item = self.room_management_table.item(row_index, 4)
+
+        room_type_name = room_type_item.text().strip() if room_type_item else ""
+        room_type_code = ""
+        for option in self.room_type_options:
+            if option["type_name"] == room_type_name:
+                room_type_code = option["type_code"]
+                break
+
+        return {
+            "id": self.room_records[row_index].id if row_index < len(self.room_records) else "",
+            "room_no": room_no_item.text().strip() if room_no_item else "",
+            "room_type_name": room_type_name,
+            "room_type_code": room_type_code,
+            "floor_no": floor_item.text().strip() if floor_item else "",
+            "phone_ext": "" if phone_item is None or phone_item.text().strip() == "-" else phone_item.text().strip(),
+            "description": "" if remark_item is None or remark_item.text().strip() == "-" else remark_item.text().strip(),
+        }
 
     def set_room_type_items(self, items: list[dict[str, object]]) -> None:
+        self.room_type_options = [
+            {
+                "type_name": str(item.get("type_name", "")).strip(),
+                "type_code": str(item.get("type_code", "")).strip(),
+            }
+            for item in items
+            if str(item.get("type_name", "")).strip() and str(item.get("type_code", "")).strip()
+        ]
         self.room_type_table.setColumnCount(6)
-        self.room_type_table.setHorizontalHeaderLabels(["房型", "编码", "房量", "门市价", "入住人数", "状态"])
-        self.room_type_table.setColumnHidden(5, True)
+        self.room_type_table.setHorizontalHeaderLabels(["房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
+        self.room_type_table.setColumnHidden(5, False)
         self.room_type_table.setRowCount(0)
         for row_index, item in enumerate(items):
             self.room_type_table.insertRow(row_index)
@@ -204,10 +549,13 @@ class PMSMainWindow(QWidget):
             ]
             for col_index, value in enumerate(values):
                 self.room_type_table.setItem(row_index, col_index, QTableWidgetItem(value))
+        self._sync_room_statuses_from_room_types(items)
 
     def _handle_stack_changed(self, index: int) -> None:
         if index == 1:
             self.room_type_refresh_requested.emit()
+        elif index == 2:
+            self.room_management_refresh_requested.emit()
 
     @staticmethod
     def _map_room_type_status(status: object) -> str:
@@ -287,6 +635,130 @@ class PMSMainWindow(QWidget):
             card.refresh()
         self._filter_room_status_cards()
 
+    def _sync_room_statuses_from_room_types(self, items: list[dict[str, object]]) -> None:
+        existing_by_room_no = {room.room_no: room for room in self.room_statuses}
+        floors = ["18F", "15F", "12F", "10F", "9F"]
+        floor_room_counters = {floor: 1 for floor in floors}
+        room_statuses: list[RoomStatus] = []
+        global_index = 0
+
+        for item in items:
+            room_type = str(item.get("type_name", "")).strip()
+            quantity = int(item.get("quantity", 0) or 0)
+            status = item.get("status")
+            default_state = "空净" if status == 1 else "维修"
+
+            for _ in range(quantity):
+                floor = floors[global_index % len(floors)]
+                room_no = f"{floor[:-1]}{floor_room_counters[floor]:02d}"
+                floor_room_counters[floor] += 1
+                global_index += 1
+
+                existing = existing_by_room_no.get(room_no)
+                if existing is not None:
+                    existing.room_type = room_type
+                    if status == 0:
+                        existing.state = "维修"
+                        existing.guest = ""
+                        existing.guest_id_no = ""
+                        existing.stay_label = "房型已停用，对应房间暂停销售"
+                        existing.last_action = "状态同步为维修"
+                    room_statuses.append(existing)
+                    continue
+
+                room_statuses.append(
+                    RoomStatus(
+                        room_no=room_no,
+                        room_type=room_type,
+                        floor=floor,
+                        state=default_state,
+                        guest="",
+                        guest_id_no="",
+                        stay_label="可直接出租" if default_state == "空净" else "房型停用，暂停销售",
+                        last_action="已放房" if default_state == "空净" else "状态同步为维修",
+                        logs=["房型控制同步生成房态卡片"],
+                    )
+                )
+
+        self.room_statuses = room_statuses
+        self.room_records = [
+            RoomRecord(
+                room_no=room.room_no,
+                room_type=room.room_type,
+                floor=room.floor,
+                id="",
+                phone_ext=f"6{room.room_no[-3:]}",
+                remark=room.last_action or room.stay_label,
+            )
+            for room in self.room_statuses
+        ]
+        if hasattr(self, "room_management_table"):
+            self._populate_room_management_table()
+        if hasattr(self, "room_status_grid"):
+            self._rebuild_room_status_cards()
+
+    def _populate_room_management_table(self) -> None:
+        self.room_management_table.setRowCount(0)
+        for row_index, room in enumerate(self.room_records):
+            self.room_management_table.insertRow(row_index)
+            values = [
+                room.room_no,
+                room.room_type,
+                room.floor,
+                room.phone_ext or "-",
+                room.remark or "-",
+            ]
+            for col_index, value in enumerate(values):
+                self.room_management_table.setItem(row_index, col_index, QTableWidgetItem(value))
+
+    def set_room_management_items(self, items: list[dict[str, object]]) -> None:
+        self.room_records = [
+            RoomRecord(
+                room_no=str(item.get("room_no", "")).strip(),
+                room_type=str(item.get("room_type_name", "")).strip(),
+                floor=str(item.get("floor_no", "")).strip(),
+                id=str(item.get("id", "")).strip(),
+                phone_ext=str(item.get("phone_ext", "")).strip(),
+                remark=str(item.get("description", "")).strip(),
+            )
+            for item in items
+        ]
+        self._populate_room_management_table()
+
+    def _rebuild_room_status_cards(self) -> None:
+        while self.room_status_grid.count():
+            item = self.room_status_grid.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        self.room_status_cards = []
+        for index, room in enumerate(self.room_statuses):
+            card = RoomStatusCard(room)
+            card.clicked.connect(lambda _checked=False, r=room: self._select_room_status(r))
+            self.room_status_cards.append(card)
+            self.room_status_grid.addWidget(card, index // 3, index % 3)
+
+        if not self.room_statuses:
+            self.selected_room = None
+            self.room_status_title.setText("房间详情")
+            self.room_status_desc.setText("当前没有房间数据，请先在房型控制中加载房型。")
+            self.room_status_note_label.setText("暂无动态")
+            self.room_status_guest_edit.clear()
+            self.room_status_id_edit.clear()
+            self.room_status_logs.clear()
+            self.room_status_logs.addItems(["暂无房间日志"])
+            return
+
+        if self.selected_room is not None:
+            matched_room = next((room for room in self.room_statuses if room.room_no == self.selected_room.room_no), None)
+            self.selected_room = matched_room or self.room_statuses[0]
+        else:
+            self.selected_room = self.room_statuses[0]
+
+        self._select_room_status(self.selected_room)
+        self._filter_room_status_cards()
+
     def _build_sidebar(self) -> QWidget:
         card = GlassCard(panel=True)
         card.setMaximumWidth(260)
@@ -309,18 +781,19 @@ class PMSMainWindow(QWidget):
             [
                 ("运营总览", lambda: self.stack.setCurrentIndex(0)),
                 ("房型控制", lambda: self.stack.setCurrentIndex(1)),
-                ("房态中心", lambda: self.stack.setCurrentIndex(2)),
-                ("预订中心", lambda: self.stack.setCurrentIndex(3)),
+                ("房间管理", lambda: self.stack.setCurrentIndex(2)),
+                ("房态中心", lambda: self.stack.setCurrentIndex(3)),
+                ("预订中心", lambda: self.stack.setCurrentIndex(4)),
             ],
         )
         member_section = SidebarSection(
             "会员管理",
             [
-                ("会员列表", lambda: self.stack.setCurrentIndex(4)),
-                ("会员充值设置", lambda: self.stack.setCurrentIndex(5)),
-                ("会员等级设置", lambda: self.stack.setCurrentIndex(4)),
-                ("会员积分设置", lambda: self.stack.setCurrentIndex(5)),
-                ("会员余额变动记录", lambda: self.stack.setCurrentIndex(4)),
+                ("会员列表", lambda: self.stack.setCurrentIndex(5)),
+                ("会员充值设置", lambda: self.stack.setCurrentIndex(6)),
+                ("会员等级设置", lambda: self.stack.setCurrentIndex(5)),
+                ("会员积分设置", lambda: self.stack.setCurrentIndex(6)),
+                ("会员余额变动记录", lambda: self.stack.setCurrentIndex(5)),
             ],
         )
         layout.addWidget(hotel_section)
@@ -435,6 +908,9 @@ class PMSMainWindow(QWidget):
         add_button = QPushButton("新增房型")
         add_button.clicked.connect(self._open_add_room_type_dialog)
         toolbar.addWidget(add_button)
+        edit_button = QPushButton("编辑")
+        edit_button.clicked.connect(self._open_edit_room_type_dialog)
+        toolbar.addWidget(edit_button)
         refresh_button = QPushButton("刷新")
         refresh_button.clicked.connect(self._reload_room_type_table)
         toolbar.addWidget(refresh_button)
@@ -444,19 +920,78 @@ class PMSMainWindow(QWidget):
         toolbar.addStretch()
 
         self.room_type_table = QTableWidget(0, 6)
-        self.room_type_table.setHorizontalHeaderLabels(["房型", "编码", "房量", "门市价", "入住人数", "状态"])
+        self.room_type_table.setHorizontalHeaderLabels(["房型", "房型编码(唯一)", "房量", "门市价", "最大入住人数", "状态"])
         self.room_type_table.horizontalHeader().setStretchLastSection(True)
         self.room_type_table.verticalHeader().setVisible(False)
         self.room_type_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.room_type_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.room_type_table.setAlternatingRowColors(False)
-        self.room_type_table.setColumnHidden(5, True)
+        self.room_type_table.setColumnHidden(5, False)
 
         table_layout.addLayout(toolbar)
         table_layout.addWidget(self.room_type_table)
 
         layout.addLayout(top)
         layout.addWidget(table_card)
+        return page
+
+    def _build_room_management_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(18)
+
+        layout.addWidget(SectionTitle("房间管理", "管理具体房号、所属房型、楼层和房间状态。"))
+
+        top = QHBoxLayout()
+        top.setSpacing(16)
+
+        search = QLineEdit()
+        search.setPlaceholderText("搜索房号、房型或房间电话")
+        floor_box = QComboBox()
+        floor_box.addItems(["全部楼层", "18F", "15F", "12F", "10F", "9F"])
+        type_box = QComboBox()
+        type_box.addItems(["全部房型", "大床房", "双床房", "套房", "单人房"])
+        top.addWidget(search, stretch=3)
+        top.addWidget(floor_box, stretch=1)
+        top.addWidget(type_box, stretch=1)
+
+        table_card = GlassCard()
+        table_layout = QVBoxLayout(table_card)
+        table_layout.setContentsMargins(18, 18, 18, 18)
+        table_layout.setSpacing(12)
+
+        toolbar = QHBoxLayout()
+        add_button = QPushButton("新增房间")
+        add_button.clicked.connect(self._open_add_room_management_dialog)
+        toolbar.addWidget(add_button)
+        edit_button = QPushButton("编辑")
+        edit_button.clicked.connect(self._open_edit_room_management_dialog)
+        toolbar.addWidget(edit_button)
+        refresh_button = QPushButton("刷新")
+        refresh_button.clicked.connect(self._reload_room_management_table)
+        toolbar.addWidget(refresh_button)
+        delete_button = QPushButton("删除")
+        delete_button.clicked.connect(self._delete_selected_room_management)
+        toolbar.addWidget(delete_button)
+        toolbar.addStretch()
+
+        self.room_management_table = QTableWidget(0, 5)
+        self.room_management_table.setHorizontalHeaderLabels(
+            ["房号", "房型", "楼层", "房间电话", "备注"]
+        )
+        self.room_management_table.horizontalHeader().setStretchLastSection(True)
+        self.room_management_table.verticalHeader().setVisible(False)
+        self.room_management_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.room_management_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.room_management_table.setAlternatingRowColors(False)
+
+        table_layout.addLayout(toolbar)
+        table_layout.addWidget(self.room_management_table)
+
+        layout.addLayout(top)
+        layout.addWidget(table_card)
+        self._populate_room_management_table()
         return page
 
     def _build_room_status_page(self) -> QWidget:
@@ -468,7 +1003,7 @@ class PMSMainWindow(QWidget):
         layout.addWidget(SectionTitle("房态中心", "快速浏览楼层状态，便于前台、客房与夜审协作。"))
 
         filters = QHBoxLayout()
-        filters.setSpacing(16)
+        filters.setSpacing(12)
         self.room_status_floor_box = QComboBox()
         self.room_status_floor_box.addItems(["全部楼层", "18F", "15F", "12F", "10F", "9F"])
         self.room_status_state_box = QComboBox()
@@ -481,12 +1016,12 @@ class PMSMainWindow(QWidget):
         filters.addStretch()
 
         content = QHBoxLayout()
-        content.setSpacing(16)
+        content.setSpacing(12)
 
         left_card = GlassCard()
         left_layout = QVBoxLayout(left_card)
-        left_layout.setContentsMargins(18, 18, 18, 18)
-        left_layout.setSpacing(14)
+        left_layout.setContentsMargins(14, 14, 14, 14)
+        left_layout.setSpacing(10)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -494,7 +1029,8 @@ class PMSMainWindow(QWidget):
         container = QWidget()
         self.room_status_grid = QGridLayout(container)
         self.room_status_grid.setContentsMargins(0, 0, 0, 0)
-        self.room_status_grid.setSpacing(14)
+        self.room_status_grid.setHorizontalSpacing(10)
+        self.room_status_grid.setVerticalSpacing(10)
         scroll.setWidget(container)
 
         self.room_status_cards = []

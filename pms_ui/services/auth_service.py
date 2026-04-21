@@ -20,6 +20,96 @@ class AuthService:
     def get_room_types(self) -> dict[str, object]:
         return self._request_json("GET", "/project/room/roomType", fallback_message="获取房型数据失败")
 
+    def get_hotel_rooms(self) -> dict[str, object]:
+        return self._request_json("GET", "/project/room/hotelRoom", fallback_message="获取房间数据失败")
+
+    def save_hotel_room(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "room_no": str(payload.get("room_no", "")).strip(),
+            "room_type_name": str(payload.get("room_type_name", "")).strip(),
+            "room_type_code": str(payload.get("room_type_code", "")).strip(),
+            "floor_no": str(payload.get("floor_no", "")).strip(),
+            "phone_ext": str(payload.get("phone_ext", "")).strip(),
+            "description": str(payload.get("description", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/saveHotelRoom",
+            payload=request_payload,
+            fallback_message="新增房间失败",
+        )
+
+    def update_hotel_room(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "id": str(payload.get("id", "")).strip(),
+            "room_no": str(payload.get("room_no", "")).strip(),
+            "room_type_name": str(payload.get("room_type_name", "")).strip(),
+            "room_type_code": str(payload.get("room_type_code", "")).strip(),
+            "floor_no": str(payload.get("floor_no", "")).strip(),
+            "phone_ext": str(payload.get("phone_ext", "")).strip(),
+            "description": str(payload.get("description", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/updateHotelRoom",
+            payload=request_payload,
+            fallback_message="修改房间失败",
+        )
+
+    def delete_hotel_room(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "room_no": str(payload.get("room_no", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/deleteHotelRoom",
+            payload=request_payload,
+            fallback_message="删除房间失败",
+        )
+
+    def save_room_type(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "type_name": str(payload.get("name", "")).strip(),
+            "type_code": str(payload.get("code", "")).strip(),
+            "max_occupancy": int(payload.get("occupancy", 0) or 0),
+            "base_price": int(payload.get("base_price", 0) or 0) * 100,
+            "quantity": int(payload.get("total_rooms", 0) or 0),
+            "status": 1 if str(payload.get("status", "")).strip() == "启用" else 0,
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/saveRoomType",
+            payload=request_payload,
+            fallback_message="新增房型失败",
+        )
+
+    def update_room_type(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "type_name": str(payload.get("name", "")).strip(),
+            "type_code": str(payload.get("code", "")).strip(),
+            "max_occupancy": int(payload.get("occupancy", 0) or 0),
+            "base_price": int(payload.get("base_price", 0) or 0) * 100,
+            "quantity": int(payload.get("total_rooms", 0) or 0),
+            "status": 1 if str(payload.get("status", "")).strip() == "启用" else 0,
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/updateRoomType",
+            payload=request_payload,
+            fallback_message="修改房型失败",
+        )
+
+    def delete_room_type(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "type_code": str(payload.get("type_code", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/deleteRoomType",
+            payload=request_payload,
+            fallback_message="删除房型失败",
+        )
+
     def set_auth_token(self, access_token: str, token_type: str = "Bearer") -> None:
         self.access_token = access_token
         self.token_type = token_type or "Bearer"

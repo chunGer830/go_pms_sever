@@ -3,13 +3,124 @@ package room.service.v1;
 option go_package = "project-room/pkg/service/room.service.v1";
 
 message RoomTypeMessage{
-    string hotel_id = 1;
+    int64  hotel_id = 1;
 }
 
-message RoomTypeResponse{
+message RoomTypeItem {
+    string type_name = 1;
+    string type_code = 2;
+    int32 max_occupancy = 3;
+    int64 base_price = 4; // 单位：分
+    int32 quantity = 5;
+    int32 status = 6;
+    int64  id             = 7;
+}
 
+message RoomTypeResponse {
+    repeated RoomTypeItem list = 1;
+}
+
+
+message SaveRoomTypeMessage{
+    int64  hotel_id = 1;
+    string type_name = 2;
+    string type_code = 3;
+    int32 max_occupancy = 4;
+    int64 base_price = 5; // 单位：分
+    int32 quantity = 6;
+    int32 status = 7;
+    int64  id             = 8;
+}
+
+message SaveRoomTypeResponse {
+}
+
+message UpdateRoomTypeMessage{
+    int64  hotel_id = 1;
+    string type_name = 2;
+    string type_code = 3;
+    int32 max_occupancy = 4;
+    int64 base_price = 5; // 单位：分
+    int32 quantity = 6;
+    int32 status = 7;
+    int64  id             = 8;
+}
+
+message UpdateRoomTypeResponse {
+}
+
+message DeleteRoomTypeMessage{
+    int64  hotel_id = 1;
+    string type_code = 2;
+}
+
+message DeleteRoomTypeResponse {
+}
+
+message HotelRoomMessage{
+    int64  hotel_id = 1;
+}
+
+message HotelRoomItem {
+    string room_no        = 1;
+    string room_type_name = 2;
+    string floor_no       = 3;
+    string building       = 4;
+    string phone_ext      = 5;
+    string description    = 6;
+    int64  id             = 7;
+}
+
+message HotelRoomResponse {
+    repeated HotelRoomItem list = 1;
+}
+
+message SaveHotelRoomMessage {
+    int64  hotel_id       = 1;
+    string room_no        = 2;
+    string room_type_name = 3;
+    string room_type_code = 4;
+    string floor_no       = 5;
+    string building       = 6;
+    string phone_ext      = 7;
+    string description    = 8;
+    int64  id             = 9;
+}
+
+message SaveHotelRoomResponse {
+}
+
+message UpdateHotelRoomMessage {
+    int64  hotel_id       = 1;
+    string room_no        = 2;
+    string room_type_name = 3;
+    string room_type_code = 4;
+    string floor_no       = 5;
+    string building       = 6;
+    string phone_ext      = 7;
+    string description    = 8;
+    int64  id             = 9;
+}
+
+message UpdateHotelRoomResponse {
+}
+
+message DeleteHotelRoomMessage{
+    int64  hotel_id = 1;
+    string room_no  = 2;
+}
+
+message DeleteHotelRoomResponse {
 }
 
 service RoomService {
   rpc RoomType(RoomTypeMessage) returns (RoomTypeResponse) {}
+  rpc SaveRoomType(SaveRoomTypeMessage) returns (SaveRoomTypeResponse) {}
+  rpc UpdateRoomType(UpdateRoomTypeMessage) returns (UpdateRoomTypeResponse) {}
+  rpc DeleteRoomType(DeleteRoomTypeMessage) returns (DeleteRoomTypeResponse) {}
+
+  rpc HotelRoom(HotelRoomMessage) returns (HotelRoomResponse) {}
+  rpc SaveHotelRoom(SaveHotelRoomMessage) returns (SaveHotelRoomResponse) {}
+  rpc UpdateHotelRoom(UpdateHotelRoomMessage) returns (UpdateHotelRoomResponse) {}
+  rpc DeleteHotelRoom(DeleteHotelRoomMessage) returns (DeleteHotelRoomResponse) {}
 }

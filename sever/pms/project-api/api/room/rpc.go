@@ -8,10 +8,10 @@ import (
 	"pms.com/project-api/config"
 	"pms.com/project-common/discovery"
 	"pms.com/project-common/logs"
-	"pms.com/project-grpc/room"
+	"pms.com/project-grpc/room/room_type"
 )
 
-var RoomServiceClient room.RoomServiceClient
+var RoomServiceClient room_type.RoomServiceClient
 
 func InitRpcRoomClient() {
 	etcdRegister := discovery.NewResolver(config.C.EtcdConfig.Addrs, logs.LG)
@@ -20,5 +20,5 @@ func InitRpcRoomClient() {
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	RoomServiceClient = room.NewRoomServiceClient(conn)
+	RoomServiceClient = room_type.NewRoomServiceClient(conn)
 }

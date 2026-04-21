@@ -9,12 +9,12 @@ import (
 	"pms.com/project-common/encrypts"
 	"pms.com/project-common/errs"
 	"pms.com/project-common/jwts"
+	"pms.com/project-common/model"
 	"pms.com/project-grpc/user/login"
 	"pms.com/project-pms/config"
 	"pms.com/project-pms/internal/dao"
 	"pms.com/project-pms/internal/data/member"
 	"pms.com/project-pms/internal/repo"
-	"pms.com/project-pms/pkg/model"
 	"strconv"
 	"time"
 )
@@ -153,4 +153,20 @@ func (h *LoginService) ChangePassword(ctx context.Context, msg *login.ChangePass
 	}
 	//返回
 	return &login.ChangePasswordResponse{}, nil
+}
+
+func (h *LoginService) TokenVerify(ctx context.Context, msg *login.LoginMessage) (*login.LoginResponse, error) {
+	token := msg.Token
+	parseToken, err := jwts.ParseToken(token, config.C.JwtConfig.AccessSecret)
+	if err != nil {
+		zap.L().Error("Login TokenVerify error", zap.Error(err))
+		return nil, errs.GrpcError(model.NoLogin)
+	}
+	id, _ := strconv.ParseInt(parseToken, 10, 64)
+	memberMessage := &login.MemberMessage{
+		Id: id,
+	}
+	return &login.LoginResponse{
+		Member: memberMessage,
+	}, nil
 }

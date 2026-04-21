@@ -5,3 +5,22 @@
 {"level":"ERROR","time":"2026-04-13T02:03:52.820+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}
 {"level":"ERROR","time":"2026-04-13T02:04:02.813+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}
 {"level":"ERROR","time":"2026-04-13T02:04:19.623+0800","caller":"login.service.v1/login_service.go:100","msg":"Login db GetMemberMessage err ","error":"sql: expected 3 arguments, got 2"}
+{"level":"ERROR","time":"2026-04-20T20:11:29.293+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:12:15.773+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:12:20.676+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:13:25.388+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:16:38.626+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:16:47.622+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:18:08.064+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:21:58.694+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:23:38.728+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify erroe","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:26:08.574+0800","caller":"login.service.v1/login_service.go:163","msg":"Login TokenVerify error","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:27:47.483+0800","caller":"login.service.v1/login_service.go:163","msg":"Login TokenVerify error","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T20:28:35.314+0800","caller":"login.service.v1/login_service.go:163","msg":"Login TokenVerify error","error":"token contains an invalid number of segments"}
+{"level":"ERROR","time":"2026-04-20T21:43:52.277+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify error","error":"tokenstring should not contain 'bearer '"}
+{"level":"ERROR","time":"2026-04-20T21:44:06.219+0800","caller":"login.service.v1/login_service.go:162","msg":"Login TokenVerify error","error":"tokenstring should not contain 'bearer '"}
+{"level":"ERROR","time":"2026-04-21T02:03:18.355+0800","caller":"room.service.v1/room_service.go:68","msg":"CreateRoomType db save err ","error":"Error 1062 (23000): Duplicate entry '5-d' for key 'room_type.uk_hotel_type_code'"}
+{"level":"ERROR","time":"2026-04-21T02:40:55.736+0800","caller":"room.service.v1/room_service.go:68","msg":"CreateRoomType db save err ","error":"Error 1062 (23000): Duplicate entry '5-s' for key 'room_type.uk_hotel_type_code'"}
+{"level":"ERROR","time":"2026-04-21T02:54:47.035+0800","caller":"room.service.v1/room_service.go:68","msg":"CreateRoomType db save err ","error":"Error 1062 (23000): Duplicate entry '5-a' for key 'room_type.uk_hotel_type_code'"}
+{"level":"ERROR","time":"2026-04-22T02:37:18.594+0800","caller":"room.service.v1/room_service.go:147","msg":"CreateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-111' for key 'hotel_room.uk_hotel_room_no'"}
+{"level":"ERROR","time":"2026-04-22T02:37:56.769+0800","caller":"room.service.v1/room_service.go:147","msg":"CreateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-1111' for key 'hotel_room.uk_hotel_room_no'"}
