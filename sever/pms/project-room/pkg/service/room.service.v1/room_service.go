@@ -2,6 +2,8 @@ package room_service_v1
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"go.uber.org/zap"
 	common "pms.com/project-common"
 	"pms.com/project-common/errs"
@@ -10,6 +12,7 @@ import (
 	"pms.com/project-room/internal/dao"
 	"pms.com/project-room/internal/data/room_type_data"
 	"pms.com/project-room/internal/repo"
+	"time"
 )
 
 type RoomService struct {
@@ -26,6 +29,16 @@ func New() *RoomService {
 }
 
 func (s *RoomService) RoomType(ctx context.Context, msg *room_type.RoomTypeMessage) (*room_type.RoomTypeResponse, error) {
+	//读缓存
+	key := fmt.Sprintf("%s%d", model.RoomTypeRedis, msg.HotelId)
+	val, err := s.cache.Get(ctx, key)
+	if err == nil && val != "" {
+		var rsp room_type.RoomTypeResponse
+		if err := json.Unmarshal([]byte(val), &rsp); err == nil {
+			return &rsp, nil
+		}
+	}
+	//读数据库
 	roomTypes, err := s.roomTypeRepo.FindRoomTypes(ctx, msg.HotelId)
 	if err != nil {
 		zap.L().Error("RoomType db FindRoomTypes err ", zap.Error(err))
@@ -50,9 +63,22 @@ func (s *RoomService) RoomType(ctx context.Context, msg *room_type.RoomTypeMessa
 		})
 	}
 
-	return &room_type.RoomTypeResponse{
+	rsp := &room_type.RoomTypeResponse{
 		List: list,
-	}, nil
+	}
+
+	//存缓存
+	data, err := json.Marshal(rsp)
+	if err == nil {
+		cacheErr := s.cache.Put(ctx, key, string(data), 30*time.Minute)
+		if cacheErr != nil {
+			zap.L().Error("RoomType cache put err", zap.Error(cacheErr))
+		}
+	} else {
+		zap.L().Error("RoomType json marshal err", zap.Error(err))
+	}
+
+	return rsp, nil
 }
 
 func (s *RoomService) SaveRoomType(ctx context.Context, msg *room_type.SaveRoomTypeMessage) (*room_type.SaveRoomTypeResponse, error) {
@@ -70,6 +96,11 @@ func (s *RoomService) SaveRoomType(ctx context.Context, msg *room_type.SaveRoomT
 		zap.L().Error("CreateRoomType db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key := fmt.Sprintf("%s%d", model.RoomTypeRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key)
+
 	return &room_type.SaveRoomTypeResponse{}, nil
 }
 
@@ -89,6 +120,11 @@ func (s *RoomService) UpdateRoomType(ctx context.Context, msg *room_type.UpdateR
 		zap.L().Error("UpdateRoomType db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key := fmt.Sprintf("%s%d", model.RoomTypeRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key)
+
 	return &room_type.UpdateRoomTypeResponse{}, nil
 }
 
@@ -102,10 +138,28 @@ func (s *RoomService) DeleteRoomType(ctx context.Context, msg *room_type.DeleteR
 		zap.L().Error("DeleteRoomType db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key := fmt.Sprintf("%s%d", model.RoomTypeRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key)
+
+	key2 := fmt.Sprintf("%s%d", model.HotelRoomRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key2)
+
 	return &room_type.DeleteRoomTypeResponse{}, nil
 }
 
 func (s *RoomService) HotelRoom(ctx context.Context, msg *room_type.HotelRoomMessage) (*room_type.HotelRoomResponse, error) {
+	//查缓存
+	key := fmt.Sprintf("%s%d", model.HotelRoomRedis, msg.HotelId)
+	val, err := s.cache.Get(ctx, key)
+	if err == nil && val != "" {
+		var rsp room_type.HotelRoomResponse
+		if err := json.Unmarshal([]byte(val), &rsp); err == nil {
+			return &rsp, nil
+		}
+	}
+	//查数据库
 	HotelRooms, err := s.roomTypeRepo.FindHotelRoom(ctx, msg.HotelId)
 	if err != nil {
 		zap.L().Error("HotelRoom db FindHotelRoom err ", zap.Error(err))
@@ -130,9 +184,22 @@ func (s *RoomService) HotelRoom(ctx context.Context, msg *room_type.HotelRoomMes
 		})
 	}
 
-	return &room_type.HotelRoomResponse{
+	rsp := &room_type.HotelRoomResponse{
 		List: list,
-	}, nil
+	}
+
+	//存缓存
+	data, err := json.Marshal(rsp)
+	if err == nil {
+		cacheErr := s.cache.Put(ctx, key, string(data), 30*time.Minute)
+		if cacheErr != nil {
+			zap.L().Error("HotelRoom cache put err", zap.Error(cacheErr))
+		}
+	} else {
+		zap.L().Error("HotelRoom json marshal err", zap.Error(err))
+	}
+
+	return rsp, nil
 }
 
 func (s *RoomService) SaveHotelRoom(ctx context.Context, msg *room_type.SaveHotelRoomMessage) (*room_type.SaveHotelRoomResponse, error) {
@@ -150,6 +217,11 @@ func (s *RoomService) SaveHotelRoom(ctx context.Context, msg *room_type.SaveHote
 		zap.L().Error("CreateHotelRoom db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key2 := fmt.Sprintf("%s%d", model.HotelRoomRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key2)
+
 	return &room_type.SaveHotelRoomResponse{}, nil
 }
 
@@ -169,6 +241,11 @@ func (s *RoomService) UpdateHotelRoom(ctx context.Context, msg *room_type.Update
 		zap.L().Error("UpdateHotelRoom db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key2 := fmt.Sprintf("%s%d", model.HotelRoomRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key2)
+
 	return &room_type.UpdateHotelRoomResponse{}, nil
 }
 
@@ -182,5 +259,10 @@ func (s *RoomService) DeleteHotelRoom(ctx context.Context, msg *room_type.Delete
 		zap.L().Error("DeleteHotelRoom db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	//删缓存
+	key2 := fmt.Sprintf("%s%d", model.HotelRoomRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key2)
+
 	return &room_type.DeleteHotelRoomResponse{}, nil
 }

@@ -97,6 +97,8 @@ class AppShell(QMainWindow):
         self.auth_service.set_auth_token(self.access_token, self.token_type)
         self.main_window.show_dashboard()
         self.stack.setCurrentIndex(1)
+        self._handle_room_type_refresh()
+        self._handle_room_management_refresh()
 
     def _handle_unauthorized(self, result: dict[str, object]) -> bool:
         if not result.get("unauthorized"):

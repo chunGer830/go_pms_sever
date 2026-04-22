@@ -19,7 +19,6 @@ func (*RouterUser) Route(r *gin.Engine) {
 	//初始化grpc连接
 	InitRpcUserClient()
 	h := New()
-	r.POST("/project/login/getCaptcha", h.getCaptcha)
 	r.POST("/project/login/register", h.register)
 	r.POST("/project/login", h.login)
 	r.POST("/project/login/changePassword", h.changePassword)
