@@ -29,3 +29,6 @@
 {"level":"ERROR","time":"2026-04-22T04:02:54.799+0800","caller":"room.service.v1/room_service.go:169","msg":"UpdateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-1' for key 'hotel_room.uk_hotel_room_no'"}
 {"level":"ERROR","time":"2026-04-22T04:04:45.831+0800","caller":"room.service.v1/room_service.go:169","msg":"UpdateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-1' for key 'hotel_room.uk_hotel_room_no'"}
 {"level":"ERROR","time":"2026-04-22T22:59:01.876+0800","caller":"room.service.v1/room_service.go:193","msg":"CreateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-11' for key 'hotel_room.uk_hotel_room_no'"}
+{"level":"ERROR","time":"2026-04-23T01:05:43.157+0800","caller":"room.service.v1/room_service.go:96","msg":"CreateRoomType db save err ","error":"Error 1062 (23000): Duplicate entry 'xcf' for key 'room_type.uk_type_code'"}
+{"level":"ERROR","time":"2026-04-23T02:50:30.654+0800","caller":"room.service.v1/room_service.go:226","msg":"CreateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '4-12' for key 'hotel_room.uk_hotel_room_no'"}
+{"level":"ERROR","time":"2026-04-23T22:17:53.481+0800","caller":"room.service.v1/room_service.go:228","msg":"CreateHotelRoom db save err ","error":"Error 1062 (23000): Duplicate entry '5-1' for key 'hotel_room.uk_hotel_room_no'"}

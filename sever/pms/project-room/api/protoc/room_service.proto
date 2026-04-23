@@ -113,6 +113,45 @@ message DeleteHotelRoomMessage{
 message DeleteHotelRoomResponse {
 }
 
+message RoomGuestStayMessage{
+    int64  hotel_id = 1;
+}
+
+message RoomGuestStayItem {
+    int64 id = 1;
+    int64 hotel_id = 2;
+    string guest_room_no = 3;
+    string guest_name = 4;
+    string guest_id_no = 5;
+    int64 real_price = 6;
+    string mobile = 7;
+    string check_in_time = 8;
+    string check_out_time = 9;
+    int32 stay_status = 10;
+    string description = 11;
+}
+
+message RoomGuestStayResponse {
+    repeated RoomGuestStayItem list = 1;
+}
+
+message UpdateRoomGuestStayMessage {
+    int64 id = 1;
+    int64 hotel_id = 2;
+    string guest_room_no = 3;
+    string guest_name = 4;
+    string guest_id_no = 5;
+    int64 real_price = 6;
+    string mobile = 7;
+    string check_in_time = 8;
+    string check_out_time = 9;
+    int32 stay_status = 10;
+    string description = 11;
+}
+
+message UpdateRoomGuestStayResponse {
+}
+
 service RoomService {
   rpc RoomType(RoomTypeMessage) returns (RoomTypeResponse) {}
   rpc SaveRoomType(SaveRoomTypeMessage) returns (SaveRoomTypeResponse) {}
@@ -123,4 +162,7 @@ service RoomService {
   rpc SaveHotelRoom(SaveHotelRoomMessage) returns (SaveHotelRoomResponse) {}
   rpc UpdateHotelRoom(UpdateHotelRoomMessage) returns (UpdateHotelRoomResponse) {}
   rpc DeleteHotelRoom(DeleteHotelRoomMessage) returns (DeleteHotelRoomResponse) {}
+
+  rpc RoomGuestStay(RoomGuestStayMessage) returns (RoomGuestStayResponse) {}
+  rpc UpdateRoomGuestStay(UpdateRoomGuestStayMessage) returns (UpdateRoomGuestStayResponse) {}
 }

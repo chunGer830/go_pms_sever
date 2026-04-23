@@ -53,6 +53,8 @@ class AppShell(QMainWindow):
         self.main_window.room_management_create_requested.connect(self._handle_room_management_create)
         self.main_window.room_management_update_requested.connect(self._handle_room_management_update)
         self.main_window.room_management_delete_requested.connect(self._handle_room_management_delete)
+        self.main_window.room_status_refresh_requested.connect(self._handle_room_status_refresh)
+        self.main_window.room_status_checkin_requested.connect(self._handle_room_status_checkin)
         self.main_window.room_type_create_requested.connect(self._handle_room_type_create)
         self.main_window.room_type_update_requested.connect(self._handle_room_type_update)
         self.main_window.room_type_delete_requested.connect(self._handle_room_type_delete)
@@ -99,6 +101,7 @@ class AppShell(QMainWindow):
         self.stack.setCurrentIndex(1)
         self._handle_room_type_refresh()
         self._handle_room_management_refresh()
+        self._handle_room_status_refresh()
 
     def _handle_unauthorized(self, result: dict[str, object]) -> bool:
         if not result.get("unauthorized"):
@@ -156,6 +159,42 @@ class AppShell(QMainWindow):
             return
 
         self.main_window.set_room_management_items(items)
+
+    def _handle_room_status_refresh(self) -> None:
+        result = self.auth_service.get_room_guest_stays()
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self.main_window.set_room_status_items([])
+            self._show_message_dialog("房态中心", str(result.get("message", "获取房态数据失败")), success=False)
+            return
+
+        data = result.get("data")
+        if isinstance(data, dict) and isinstance(data.get("list"), list):
+            items = [item for item in data["list"] if isinstance(item, dict)]
+        elif isinstance(data, dict):
+            items = [data] if data else []
+        elif isinstance(data, list):
+            items = [item for item in data if isinstance(item, dict)]
+        elif data in (None, "", ()):
+            items = []
+        else:
+            self.main_window.set_room_status_items([])
+            self._show_message_dialog("房态中心", "房态数据格式不正确", success=False)
+            return
+
+        self.main_window.set_room_status_items(items)
+
+    def _handle_room_status_checkin(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.update_room_guest_stay(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("房态中心", str(result.get("message", "入住失败")), success=False)
+            return
+
+        self._show_message_dialog("房态中心", "入住成功", success=True)
+        self._handle_room_status_refresh()
 
     def _handle_room_management_create(self, payload: dict[str, object]) -> None:
         result = self.auth_service.save_hotel_room(payload)

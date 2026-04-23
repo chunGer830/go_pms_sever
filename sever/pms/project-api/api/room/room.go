@@ -344,3 +344,82 @@ func (r *HandlerRoom) deleteHotelRoom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result.Sucess("删除成功"))
 }
+
+func (r *HandlerRoom) roomGuestStay(c *gin.Context) {
+	result := &common.Result{}
+
+	idValue, exists := c.Get("hotel_id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.RoomGuestStayMessage{
+		HotelId: id,
+	}
+
+	roomRsp, err := RoomServiceClient.RoomGuestStay(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess(roomRsp))
+}
+
+func (r *HandlerRoom) updateRoomGuestStay(c *gin.Context) {
+	result := &common.Result{}
+	//接收参数
+	var req roomModel.RoomGuestStayReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
+		return
+	}
+	//获取id
+	idValue, exists := c.Get("hotel_id")
+	if !exists {
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "未登录"))
+		return
+	}
+	id, ok := idValue.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, result.Fail(http.StatusBadRequest, "用户ID类型错误"))
+		return
+	}
+
+	//
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	msg := &room_type.UpdateRoomGuestStayMessage{
+		Id:           req.Id,
+		HotelId:      id,
+		GuestRoomNo:  req.GuestRoomNo,
+		GuestName:    req.GuestName,
+		GuestIdNo:    req.GuestIdNo,
+		RealPrice:    req.RealPrice,
+		Mobile:       req.Mobile,
+		CheckInTime:  req.CheckInTime,
+		CheckOutTime: req.CheckOutTime,
+		StayStatus:   int32(req.StayStatus),
+		Description:  req.Description,
+	}
+
+	_, err = RoomServiceClient.UpdateRoomGuestStay(ctx, msg)
+	if err != nil {
+		code, msg := errs.ParseGrpcError(err)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Sucess("修改成功"))
+}

@@ -33,7 +33,14 @@ class RoomStatus:
     floor: str
     state: str
     guest: str
+    id: str = ""
+    hotel_id: str = ""
     guest_id_no: str = ""
+    mobile: str = ""
+    real_price: str = ""
+    check_in_time: str = ""
+    check_out_time: str = ""
+    description: str = ""
     stay_label: str = ""
     last_action: str = ""
     logs: list[str] = field(default_factory=list)

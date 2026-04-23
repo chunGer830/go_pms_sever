@@ -22,3 +22,17 @@ type SaveRoomTypeReq struct {
 	Quantity     int    `json:"quantity" form:"quantity"`
 	Status       int    `json:"status" form:"status"`
 }
+
+type RoomGuestStayReq struct {
+	Id           int64  `json:"id" form:"id"`
+	HotelId      int64  `json:"hotel_id" form:"hotel_id"`
+	GuestRoomNo  string `json:"guest_room_no" form:"guest_room_no"`
+	GuestName    string `json:"guest_name" form:"guest_name"`
+	GuestIdNo    string `json:"guest_id_no" form:"guest_id_no"`
+	RealPrice    int64  `json:"real_price" form:"real_price"`
+	Mobile       string `json:"mobile" form:"mobile"`
+	CheckInTime  string `json:"check_in_time" form:"check_in_time"`
+	CheckOutTime string `json:"check_out_time" form:"check_out_time"`
+	StayStatus   int8   `json:"stay_status" form:"stay_status"`
+	Description  string `json:"description" form:"description"`
+}

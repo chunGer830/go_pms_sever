@@ -19,14 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RoomService_RoomType_FullMethodName        = "/room.service.v1.RoomService/RoomType"
-	RoomService_SaveRoomType_FullMethodName    = "/room.service.v1.RoomService/SaveRoomType"
-	RoomService_UpdateRoomType_FullMethodName  = "/room.service.v1.RoomService/UpdateRoomType"
-	RoomService_DeleteRoomType_FullMethodName  = "/room.service.v1.RoomService/DeleteRoomType"
-	RoomService_HotelRoom_FullMethodName       = "/room.service.v1.RoomService/HotelRoom"
-	RoomService_SaveHotelRoom_FullMethodName   = "/room.service.v1.RoomService/SaveHotelRoom"
-	RoomService_UpdateHotelRoom_FullMethodName = "/room.service.v1.RoomService/UpdateHotelRoom"
-	RoomService_DeleteHotelRoom_FullMethodName = "/room.service.v1.RoomService/DeleteHotelRoom"
+	RoomService_RoomType_FullMethodName            = "/room.service.v1.RoomService/RoomType"
+	RoomService_SaveRoomType_FullMethodName        = "/room.service.v1.RoomService/SaveRoomType"
+	RoomService_UpdateRoomType_FullMethodName      = "/room.service.v1.RoomService/UpdateRoomType"
+	RoomService_DeleteRoomType_FullMethodName      = "/room.service.v1.RoomService/DeleteRoomType"
+	RoomService_HotelRoom_FullMethodName           = "/room.service.v1.RoomService/HotelRoom"
+	RoomService_SaveHotelRoom_FullMethodName       = "/room.service.v1.RoomService/SaveHotelRoom"
+	RoomService_UpdateHotelRoom_FullMethodName     = "/room.service.v1.RoomService/UpdateHotelRoom"
+	RoomService_DeleteHotelRoom_FullMethodName     = "/room.service.v1.RoomService/DeleteHotelRoom"
+	RoomService_RoomGuestStay_FullMethodName       = "/room.service.v1.RoomService/RoomGuestStay"
+	RoomService_UpdateRoomGuestStay_FullMethodName = "/room.service.v1.RoomService/UpdateRoomGuestStay"
 )
 
 // RoomServiceClient is the client API for RoomService service.
@@ -41,6 +43,8 @@ type RoomServiceClient interface {
 	SaveHotelRoom(ctx context.Context, in *SaveHotelRoomMessage, opts ...grpc.CallOption) (*SaveHotelRoomResponse, error)
 	UpdateHotelRoom(ctx context.Context, in *UpdateHotelRoomMessage, opts ...grpc.CallOption) (*UpdateHotelRoomResponse, error)
 	DeleteHotelRoom(ctx context.Context, in *DeleteHotelRoomMessage, opts ...grpc.CallOption) (*DeleteHotelRoomResponse, error)
+	RoomGuestStay(ctx context.Context, in *RoomGuestStayMessage, opts ...grpc.CallOption) (*RoomGuestStayResponse, error)
+	UpdateRoomGuestStay(ctx context.Context, in *UpdateRoomGuestStayMessage, opts ...grpc.CallOption) (*UpdateRoomGuestStayResponse, error)
 }
 
 type roomServiceClient struct {
@@ -131,6 +135,26 @@ func (c *roomServiceClient) DeleteHotelRoom(ctx context.Context, in *DeleteHotel
 	return out, nil
 }
 
+func (c *roomServiceClient) RoomGuestStay(ctx context.Context, in *RoomGuestStayMessage, opts ...grpc.CallOption) (*RoomGuestStayResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RoomGuestStayResponse)
+	err := c.cc.Invoke(ctx, RoomService_RoomGuestStay_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roomServiceClient) UpdateRoomGuestStay(ctx context.Context, in *UpdateRoomGuestStayMessage, opts ...grpc.CallOption) (*UpdateRoomGuestStayResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateRoomGuestStayResponse)
+	err := c.cc.Invoke(ctx, RoomService_UpdateRoomGuestStay_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RoomServiceServer is the server API for RoomService service.
 // All implementations must embed UnimplementedRoomServiceServer
 // for forward compatibility.
@@ -143,6 +167,8 @@ type RoomServiceServer interface {
 	SaveHotelRoom(context.Context, *SaveHotelRoomMessage) (*SaveHotelRoomResponse, error)
 	UpdateHotelRoom(context.Context, *UpdateHotelRoomMessage) (*UpdateHotelRoomResponse, error)
 	DeleteHotelRoom(context.Context, *DeleteHotelRoomMessage) (*DeleteHotelRoomResponse, error)
+	RoomGuestStay(context.Context, *RoomGuestStayMessage) (*RoomGuestStayResponse, error)
+	UpdateRoomGuestStay(context.Context, *UpdateRoomGuestStayMessage) (*UpdateRoomGuestStayResponse, error)
 	mustEmbedUnimplementedRoomServiceServer()
 }
 
@@ -176,6 +202,12 @@ func (UnimplementedRoomServiceServer) UpdateHotelRoom(context.Context, *UpdateHo
 }
 func (UnimplementedRoomServiceServer) DeleteHotelRoom(context.Context, *DeleteHotelRoomMessage) (*DeleteHotelRoomResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteHotelRoom not implemented")
+}
+func (UnimplementedRoomServiceServer) RoomGuestStay(context.Context, *RoomGuestStayMessage) (*RoomGuestStayResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RoomGuestStay not implemented")
+}
+func (UnimplementedRoomServiceServer) UpdateRoomGuestStay(context.Context, *UpdateRoomGuestStayMessage) (*UpdateRoomGuestStayResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateRoomGuestStay not implemented")
 }
 func (UnimplementedRoomServiceServer) mustEmbedUnimplementedRoomServiceServer() {}
 func (UnimplementedRoomServiceServer) testEmbeddedByValue()                     {}
@@ -342,6 +374,42 @@ func _RoomService_DeleteHotelRoom_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RoomService_RoomGuestStay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RoomGuestStayMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoomServiceServer).RoomGuestStay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RoomService_RoomGuestStay_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoomServiceServer).RoomGuestStay(ctx, req.(*RoomGuestStayMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RoomService_UpdateRoomGuestStay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRoomGuestStayMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoomServiceServer).UpdateRoomGuestStay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RoomService_UpdateRoomGuestStay_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoomServiceServer).UpdateRoomGuestStay(ctx, req.(*UpdateRoomGuestStayMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RoomService_ServiceDesc is the grpc.ServiceDesc for RoomService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +448,14 @@ var RoomService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteHotelRoom",
 			Handler:    _RoomService_DeleteHotelRoom_Handler,
+		},
+		{
+			MethodName: "RoomGuestStay",
+			Handler:    _RoomService_RoomGuestStay_Handler,
+		},
+		{
+			MethodName: "UpdateRoomGuestStay",
+			Handler:    _RoomService_UpdateRoomGuestStay_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

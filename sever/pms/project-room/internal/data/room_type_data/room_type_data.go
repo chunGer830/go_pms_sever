@@ -41,3 +41,24 @@ type HotelRoom struct {
 func (HotelRoom) TableName() string {
 	return "hotel_room"
 }
+
+// RoomGuestStay 房间入住表
+type RoomGuestStay struct {
+	ID           int64     `gorm:"primaryKey;autoIncrement;column:id" json:"id"`
+	HotelID      int64     `gorm:"column:hotel_id;not null" json:"hotel_id"`
+	GuestRoomNo  string    `gorm:"column:guest_room_no;not null" json:"guest_room_no"`
+	GuestName    string    `gorm:"column:guest_name;not null;comment:住客姓名" json:"guest_name"`
+	GuestIDNo    string    `gorm:"column:guest_id_no" json:"guest_id_no,omitempty"` // 可空
+	RealPrice    int64     `gorm:"column:real_price;not null;default:0;comment:实际价格" json:"real_price"`
+	Mobile       string    `gorm:"column:mobile" json:"mobile,omitempty"` // 可空
+	CheckInTime  string    `gorm:"column:check_in_time;not null;comment:入住时间" json:"check_in_time"`
+	CheckOutTime string    `gorm:"column:check_out_time" json:"check_out_time,omitempty"` // 可空
+	StayStatus   int8      `gorm:"column:stay_status;not null;default:1;comment:1空置 2在住 3待清理" json:"stay_status"`
+	Description  string    `gorm:"column:description" json:"description,omitempty"` // 可空
+	CreatedAt    time.Time `gorm:"column:created_at;not null;autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"column:updated_at;not null;autoUpdateTime" json:"updated_at"`
+}
+
+func (RoomGuestStay) TableName() string {
+	return "room_guest_stay"
+}

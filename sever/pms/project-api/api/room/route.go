@@ -31,4 +31,7 @@ func (*RouterRoom) Route(r *gin.Engine) {
 	group.POST("/saveHotelRoom", h.saveHotelRoom)
 	group.POST("/updateHotelRoom", h.updateHotelRoom)
 	group.POST("/deleteHotelRoom", h.deleteHotelRoom)
+
+	group.GET("/roomGuestStay", h.roomGuestStay)
+	group.POST("/updateRoomGuestStay", h.updateRoomGuestStay)
 }
