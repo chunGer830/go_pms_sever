@@ -55,6 +55,9 @@ class AppShell(QMainWindow):
         self.main_window.room_management_delete_requested.connect(self._handle_room_management_delete)
         self.main_window.room_status_refresh_requested.connect(self._handle_room_status_refresh)
         self.main_window.room_status_checkin_requested.connect(self._handle_room_status_checkin)
+        self.main_window.room_status_checkout_requested.connect(self._handle_room_status_checkout)
+        self.main_window.room_status_clean_requested.connect(self._handle_room_status_clean)
+        self.main_window.room_status_disable_requested.connect(self._handle_room_status_disable)
         self.main_window.room_type_create_requested.connect(self._handle_room_type_create)
         self.main_window.room_type_update_requested.connect(self._handle_room_type_update)
         self.main_window.room_type_delete_requested.connect(self._handle_room_type_delete)
@@ -194,6 +197,39 @@ class AppShell(QMainWindow):
             return
 
         self._show_message_dialog("房态中心", "入住成功", success=True)
+        self._handle_room_status_refresh()
+
+    def _handle_room_status_checkout(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.checkout_room_guest_stay(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("房态中心", str(result.get("message", "退房失败")), success=False)
+            return
+
+        self._show_message_dialog("房态中心", "退房成功", success=True)
+        self._handle_room_status_refresh()
+
+    def _handle_room_status_clean(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.clean_room_guest_stay(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("房态中心", str(result.get("message", "清理完成失败")), success=False)
+            return
+
+        self._show_message_dialog("房态中心", "清理完成", success=True)
+        self._handle_room_status_refresh()
+
+    def _handle_room_status_disable(self, payload: dict[str, object]) -> None:
+        result = self.auth_service.disable_room_guest_stay(payload)
+        if self._handle_unauthorized(result):
+            return
+        if not result.get("success"):
+            self._show_message_dialog("房态中心", str(result.get("message", "禁用失败")), success=False)
+            return
+
+        self._show_message_dialog("房态中心", "禁用成功", success=True)
         self._handle_room_status_refresh()
 
     def _handle_room_management_create(self, payload: dict[str, object]) -> None:

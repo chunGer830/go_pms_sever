@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QDateTimeEdit,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -309,6 +310,9 @@ class PMSMainWindow(QWidget):
     room_management_delete_requested = pyqtSignal(dict)
     room_status_refresh_requested = pyqtSignal()
     room_status_checkin_requested = pyqtSignal(dict)
+    room_status_checkout_requested = pyqtSignal(dict)
+    room_status_clean_requested = pyqtSignal(dict)
+    room_status_disable_requested = pyqtSignal(dict)
 
     def __init__(self) -> None:
         super().__init__()
@@ -336,7 +340,6 @@ class PMSMainWindow(QWidget):
         self.stack.addWidget(self._build_room_type_page())
         self.stack.addWidget(self._build_room_management_page())
         self.stack.addWidget(self._build_room_status_page())
-        self.stack.addWidget(self._build_reservation_page())
         self.stack.addWidget(self._build_member_list_page())
         self.stack.addWidget(self._build_member_recharge_page())
         self.stack.currentChanged.connect(self._handle_stack_changed)
@@ -615,8 +618,9 @@ class PMSMainWindow(QWidget):
         self.room_status_id_edit.setText(room.guest_id_no)
         self.room_status_note_label.setText(room.stay_label or room.last_action or "暂无动态")
         self.room_status_mobile_edit.setText(self._stringify_room_status_value(room.mobile))
-        self.room_status_price_edit.setText(self._stringify_room_status_value(room.real_price))
+        self.room_status_price_edit.setValue(self._price_from_backend(room.real_price))
         self._set_room_status_datetime(self.room_status_checkout_edit, room.check_out_time)
+        self.room_status_remark_edit.setText(room.description or "")
 
     def _checkin_selected_room(self) -> None:
         if self.selected_room is None:
@@ -629,27 +633,62 @@ class PMSMainWindow(QWidget):
             "guest_room_no": self.selected_room.room_no,
             "guest_name": guest,
             "guest_id_no": guest_id,
-            "real_price": self.room_status_price_edit.text().strip(),
+            "real_price": self.room_status_price_edit.value(),
             "mobile": self.room_status_mobile_edit.text().strip(),
             "check_in_time": QDateTime.currentDateTime().toString("yyyy-MM-dd HH:mm:ss"),
             "check_out_time": self.room_status_checkout_edit.dateTime().toString("yyyy-MM-dd HH:mm:ss"),
             "stay_status": 2,
-            "description": self.selected_room.description or self.room_status_note_label.text().strip(),
+            "description": self.room_status_remark_edit.text().strip(),
         }
         self.room_status_checkin_requested.emit(payload)
 
     def _checkout_selected_room(self) -> None:
         if self.selected_room is None:
             return
-        guest_name = self.selected_room.guest or "当前住客"
-        self.selected_room.guest = ""
-        self.selected_room.guest_id_no = ""
-        self.selected_room.state = "待清理"
-        self.selected_room.stay_label = f"{guest_name} 已退房，待客房清扫"
-        self.selected_room.last_action = "状态切换为待清理"
-        self.selected_room.logs.insert(0, f"前台办理退房: {guest_name}")
-        self._refresh_room_status_cards()
-        self._select_room_status(self.selected_room)
+        payload = {
+            "guest_room_no": self.selected_room.room_no,
+            "guest_name": self.room_status_guest_edit.text().strip(),
+            "guest_id_no": self.room_status_id_edit.text().strip(),
+            "real_price": self.room_status_price_edit.value(),
+            "mobile": self.room_status_mobile_edit.text().strip(),
+            "check_in_time": self._stringify_room_status_value(self.selected_room.check_in_time),
+            "check_out_time": QDateTime.currentDateTime().toString("yyyy-MM-dd HH:mm:ss"),
+            "stay_status": 3,
+            "description": self.room_status_remark_edit.text().strip(),
+        }
+        self.room_status_checkout_requested.emit(payload)
+
+    def _mark_selected_room_cleaned(self) -> None:
+        if self.selected_room is None:
+            return
+        payload = {
+            "guest_room_no": self.selected_room.room_no,
+            "guest_name": "",
+            "guest_id_no": "",
+            "real_price": 0,
+            "mobile": "",
+            "check_in_time": "",
+            "check_out_time": "",
+            "stay_status": 1,
+            "description": self.room_status_remark_edit.text().strip(),
+        }
+        self.room_status_clean_requested.emit(payload)
+
+    def _disable_selected_room(self) -> None:
+        if self.selected_room is None:
+            return
+        payload = {
+            "guest_room_no": self.selected_room.room_no,
+            "guest_name": self.room_status_guest_edit.text().strip(),
+            "guest_id_no": self.room_status_id_edit.text().strip(),
+            "real_price": self.room_status_price_edit.value(),
+            "mobile": self.room_status_mobile_edit.text().strip(),
+            "check_in_time": self._stringify_room_status_value(self.selected_room.check_in_time),
+            "check_out_time": self._stringify_room_status_value(self.selected_room.check_out_time),
+            "stay_status": 4,
+            "description": self.room_status_remark_edit.text().strip(),
+        }
+        self.room_status_disable_requested.emit(payload)
 
     def _refresh_room_status_cards(self) -> None:
         for card in self.room_status_cards:
@@ -781,7 +820,7 @@ class PMSMainWindow(QWidget):
                     guest=guest_name,
                     guest_id_no=str(item.get("guest_id_no", "")).strip(),
                     mobile=self._stringify_room_status_value(item.get("mobile")),
-                    real_price=self._stringify_room_status_value(item.get("real_price")),
+                    real_price=str(self._price_from_backend(item.get("real_price"))),
                     check_in_time=check_in_time,
                     check_out_time=check_out_time,
                     description=description,
@@ -839,6 +878,8 @@ class PMSMainWindow(QWidget):
             return "在住"
         if status == 3 or str(status).strip() == "3":
             return "待清理"
+        if status == 4 or str(status).strip() == "4":
+            return "禁用"
         return str(status).strip() or "未知"
 
     @staticmethod
@@ -877,6 +918,21 @@ class PMSMainWindow(QWidget):
         return str(value).strip()
 
     @staticmethod
+    @staticmethod
+    def _to_int(value: object) -> int:
+        text = PMSMainWindow._stringify_room_status_value(value)
+        if not text:
+            return 0
+        try:
+            return int(float(text))
+        except (TypeError, ValueError):
+            return 0
+
+    @staticmethod
+    def _price_from_backend(value: object) -> float:
+        cents = PMSMainWindow._to_int(value)
+        return cents / 100
+
     def _format_room_status_card_time(value: object) -> str:
         text = PMSMainWindow._stringify_room_status_value(value)
         if not text:
@@ -941,8 +997,9 @@ class PMSMainWindow(QWidget):
             self.room_status_guest_edit.clear()
             self.room_status_id_edit.clear()
             self.room_status_mobile_edit.clear()
-            self.room_status_price_edit.clear()
+            self.room_status_price_edit.setValue(0)
             self.room_status_checkout_edit.setDateTime(QDateTime.currentDateTime())
+            self.room_status_remark_edit.clear()
             return
 
         if self.selected_room is not None:
@@ -978,17 +1035,16 @@ class PMSMainWindow(QWidget):
                 ("房型控制", lambda: self.stack.setCurrentIndex(1)),
                 ("房间管理", lambda: self.stack.setCurrentIndex(2)),
                 ("房态中心", lambda: self.stack.setCurrentIndex(3)),
-                ("预订中心", lambda: self.stack.setCurrentIndex(4)),
             ],
         )
         member_section = SidebarSection(
             "会员管理",
             [
-                ("会员列表", lambda: self.stack.setCurrentIndex(5)),
-                ("会员充值设置", lambda: self.stack.setCurrentIndex(6)),
-                ("会员等级设置", lambda: self.stack.setCurrentIndex(5)),
-                ("会员积分设置", lambda: self.stack.setCurrentIndex(6)),
-                ("会员余额变动记录", lambda: self.stack.setCurrentIndex(5)),
+                ("会员列表", lambda: self.stack.setCurrentIndex(4)),
+                ("会员充值设置", lambda: self.stack.setCurrentIndex(5)),
+                ("会员等级设置", lambda: self.stack.setCurrentIndex(4)),
+                ("会员积分设置", lambda: self.stack.setCurrentIndex(5)),
+                ("会员余额变动记录", lambda: self.stack.setCurrentIndex(4)),
             ],
         )
         layout.addWidget(hotel_section)
@@ -1203,7 +1259,7 @@ class PMSMainWindow(QWidget):
         self.room_status_floor_box = QComboBox()
         self.room_status_floor_box.addItems(["全部楼层", "18F", "15F", "12F", "10F", "9F"])
         self.room_status_state_box = QComboBox()
-        self.room_status_state_box.addItems(["全部状态", "空净", "在住", "预抵", "待清理", "待检", "维修"])
+        self.room_status_state_box.addItems(["全部状态", "空置", "在住", "待清理", "禁用"])
         self.room_status_keyword_edit = QLineEdit()
         self.room_status_keyword_edit.setPlaceholderText("输入楼层、房号、入住人姓名或证件号")
         refresh_button = QPushButton("刷新")
@@ -1259,19 +1315,59 @@ class PMSMainWindow(QWidget):
         self.room_status_id_edit = QLineEdit()
         self.room_status_id_edit.setPlaceholderText("入住人证件号")
 
-        action_row = QHBoxLayout()
+        action_row = QVBoxLayout()
+        action_row.setSpacing(44)
+        primary_action_row = QHBoxLayout()
+        primary_action_row.setSpacing(8)
+        secondary_action_row = QHBoxLayout()
+        secondary_action_row.setSpacing(8)
         checkin_btn = QPushButton("入住")
         checkin_btn.setProperty("variant", "primary")
         checkin_btn.clicked.connect(self._checkin_selected_room)
         checkout_btn = QPushButton("退房")
         checkout_btn.clicked.connect(self._checkout_selected_room)
-        action_row.addWidget(checkin_btn)
-        action_row.addWidget(checkout_btn)
+        clean_done_btn = QPushButton("清理完成")
+        clean_done_btn.clicked.connect(self._mark_selected_room_cleaned)
+        disable_btn = QPushButton("禁用")
+        disable_btn.clicked.connect(self._disable_selected_room)
+        primary_action_row.addWidget(checkin_btn)
+        primary_action_row.addWidget(checkout_btn)
+        secondary_action_row.addWidget(clean_done_btn)
+        secondary_action_row.addWidget(disable_btn)
+        action_row.addLayout(primary_action_row)
+        action_row.addLayout(secondary_action_row)
 
         self.room_status_mobile_edit = QLineEdit()
         self.room_status_mobile_edit.setPlaceholderText("手机号")
-        self.room_status_price_edit = QLineEdit()
-        self.room_status_price_edit.setPlaceholderText("总价格")
+        self.room_status_price_edit = QDoubleSpinBox()
+        self.room_status_price_edit.setRange(0, 99999999)
+        self.room_status_price_edit.setDecimals(2)
+        self.room_status_price_edit.setSingleStep(0.01)
+        self.room_status_price_edit.setPrefix("￥ ")
+        self.room_status_price_edit.setValue(0)
+        self.room_status_price_edit.setStyleSheet(
+            """
+            QDoubleSpinBox {
+                background: #FFFFFF;
+                border: 1px solid #D8E1EC;
+                border-radius: 12px;
+                padding: 10px 12px;
+                color: #1F2E42;
+                selection-background-color: #A9C9FF;
+            }
+            QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+                width: 0px;
+                border: none;
+                background: transparent;
+            }
+            """
+        )
+        self.room_status_checkout_label = QLabel("离开时间")
+        self.room_status_checkout_label.setStyleSheet("color: #D6E2F3;")
+        self.room_status_remark_label = QLabel("房间备注")
+        self.room_status_remark_label.setStyleSheet("color: #D6E2F3;")
+        self.room_status_remark_edit = QLineEdit()
+        self.room_status_remark_edit.setPlaceholderText("输入房间备注")
         self.room_status_checkout_edit = QDateTimeEdit()
         self.room_status_checkout_edit.setDisplayFormat("yyyy-MM-dd HH:mm")
         self.room_status_checkout_edit.setCalendarPopup(True)
@@ -1336,7 +1432,10 @@ class PMSMainWindow(QWidget):
         detail_layout.addWidget(self.room_status_id_edit)
         detail_layout.addWidget(self.room_status_mobile_edit)
         detail_layout.addWidget(self.room_status_price_edit)
+        detail_layout.addWidget(self.room_status_checkout_label)
         detail_layout.addWidget(self.room_status_checkout_edit)
+        detail_layout.addWidget(self.room_status_remark_label)
+        detail_layout.addWidget(self.room_status_remark_edit)
         detail_layout.addLayout(action_row)
         detail_layout.addStretch()
 

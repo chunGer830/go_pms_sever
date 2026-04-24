@@ -31,7 +31,7 @@ class AuthService:
             "guest_room_no": str(payload.get("guest_room_no", "")).strip(),
             "guest_name": str(payload.get("guest_name", "")).strip(),
             "guest_id_no": str(payload.get("guest_id_no", "")).strip(),
-            "real_price": self._to_int(payload.get("real_price")),
+            "real_price": int(round(self._to_float(payload.get("real_price")) * 100)),
             "mobile": str(payload.get("mobile", "")).strip(),
             "check_in_time": str(payload.get("check_in_time", "")).strip(),
             "check_out_time": str(payload.get("check_out_time", "")).strip(),
@@ -43,6 +43,63 @@ class AuthService:
             "/project/room/updateRoomGuestStay",
             payload=request_payload,
             fallback_message="更新房态失败",
+        )
+
+    def checkout_room_guest_stay(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "guest_room_no": str(payload.get("guest_room_no", "")).strip(),
+            "guest_name": str(payload.get("guest_name", "")).strip(),
+            "guest_id_no": str(payload.get("guest_id_no", "")).strip(),
+            "real_price": int(round(self._to_float(payload.get("real_price")) * 100)),
+            "mobile": str(payload.get("mobile", "")).strip(),
+            "check_in_time": str(payload.get("check_in_time", "")).strip(),
+            "check_out_time": str(payload.get("check_out_time", "")).strip(),
+            "stay_status": self._to_int(payload.get("stay_status")),
+            "description": str(payload.get("description", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/checkoutRoomGuestStay",
+            payload=request_payload,
+            fallback_message="退房失败",
+        )
+
+    def clean_room_guest_stay(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "guest_room_no": str(payload.get("guest_room_no", "")).strip(),
+            "guest_name": str(payload.get("guest_name", "")).strip(),
+            "guest_id_no": str(payload.get("guest_id_no", "")).strip(),
+            "real_price": int(round(self._to_float(payload.get("real_price")) * 100)),
+            "mobile": str(payload.get("mobile", "")).strip(),
+            "check_in_time": str(payload.get("check_in_time", "")).strip(),
+            "check_out_time": str(payload.get("check_out_time", "")).strip(),
+            "stay_status": self._to_int(payload.get("stay_status")),
+            "description": str(payload.get("description", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/cleanRoomGuestStay",
+            payload=request_payload,
+            fallback_message="清理完成失败",
+        )
+
+    def disable_room_guest_stay(self, payload: dict[str, object]) -> dict[str, object]:
+        request_payload = {
+            "guest_room_no": str(payload.get("guest_room_no", "")).strip(),
+            "guest_name": str(payload.get("guest_name", "")).strip(),
+            "guest_id_no": str(payload.get("guest_id_no", "")).strip(),
+            "real_price": int(round(self._to_float(payload.get("real_price")) * 100)),
+            "mobile": str(payload.get("mobile", "")).strip(),
+            "check_in_time": str(payload.get("check_in_time", "")).strip(),
+            "check_out_time": str(payload.get("check_out_time", "")).strip(),
+            "stay_status": self._to_int(payload.get("stay_status")),
+            "description": str(payload.get("description", "")).strip(),
+        }
+        return self._request_json(
+            "POST",
+            "/project/room/disableRoomGuestStay",
+            payload=request_payload,
+            fallback_message="禁用失败",
         )
 
     def save_hotel_room(self, payload: dict[str, object]) -> dict[str, object]:
@@ -165,6 +222,16 @@ class AuthService:
             return int(float(text))
         except (TypeError, ValueError):
             return 0
+
+    @staticmethod
+    def _to_float(value: object) -> float:
+        text = str(value or "").strip()
+        if not text:
+            return 0.0
+        try:
+            return float(text)
+        except (TypeError, ValueError):
+            return 0.0
 
     def _request_json(
         self,

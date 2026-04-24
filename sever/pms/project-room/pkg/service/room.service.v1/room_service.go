@@ -357,7 +357,7 @@ func (s *RoomService) UpdateRoomGuestStay(ctx context.Context, msg *room_type.Up
 		Mobile:       msg.Mobile,
 		CheckInTime:  msg.CheckInTime,
 		CheckOutTime: msg.CheckOutTime,
-		StayStatus:   int8(msg.StayStatus),
+		StayStatus:   int8(msg.StayStatus), //1空置 2在住 3待清理 4禁用
 		Description:  msg.Description,
 	}
 	err := s.roomGuestStayRepo.UpdateRoomGuestStay(ctx, NewRoomGuestStay)
