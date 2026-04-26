@@ -32,28 +32,6 @@ func New() *LoginService {
 	}
 }
 
-func (h *LoginService) GetCaptcha(ctx context.Context, msg *login.CaptchaMessage) (*login.CaptchaResponse, error) {
-	rsq := &common.Result{}
-	fmt.Println(rsq)
-	//1. 获取参数
-	mobile := msg.Mobile
-	//2. 验证手机合法性
-	//if {
-	//	return nil,errs.GrpcError(model.InLegalMobile)
-	//}
-
-	//3.生成验证码
-	code := "123456"
-	//4. 发送验证码
-	go func() {
-		time.Sleep(2 * time.Second)
-		log.Println("调用短信平台发送短信")
-		//发送成功 存入redis
-		fmt.Println(mobile, code)
-	}()
-	return &login.CaptchaResponse{Code: code}, nil
-}
-
 func (h *LoginService) Register(ctx context.Context, msg *login.RegisterMessage) (*login.RegisterResponse, error) {
 	//校验 （账号是否被注册）
 	c := context.Background()
