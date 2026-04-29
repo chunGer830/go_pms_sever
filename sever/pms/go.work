@@ -6,4 +6,6 @@ use (
 	./project-pms
 	./project-grpc
 	./project-room
+	./project-computer
+
 )

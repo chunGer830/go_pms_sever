@@ -2,10 +2,7 @@ package login_service_v1
 
 import (
 	"context"
-	"fmt"
 	"go.uber.org/zap"
-	"log"
-	common "pms.com/project-common"
 	"pms.com/project-common/encrypts"
 	"pms.com/project-common/errs"
 	"pms.com/project-common/jwts"
@@ -32,32 +29,9 @@ func New() *LoginService {
 	}
 }
 
-func (h *LoginService) GetCaptcha(ctx context.Context, msg *login.CaptchaMessage) (*login.CaptchaResponse, error) {
-	rsq := &common.Result{}
-	fmt.Println(rsq)
-	//1. 获取参数
-	mobile := msg.Mobile
-	//2. 验证手机合法性
-	//if {
-	//	return nil,errs.GrpcError(model.InLegalMobile)
-	//}
-
-	//3.生成验证码
-	code := "123456"
-	//4. 发送验证码
-	go func() {
-		time.Sleep(2 * time.Second)
-		log.Println("调用短信平台发送短信")
-		//发送成功 存入redis
-		fmt.Println(mobile, code)
-	}()
-	return &login.CaptchaResponse{Code: code}, nil
-}
-
 func (h *LoginService) Register(ctx context.Context, msg *login.RegisterMessage) (*login.RegisterResponse, error) {
 	//校验 （账号是否被注册）
-	c := context.Background()
-	exist, err := h.memberRepo.GetMemberByUsername(c, msg.Username)
+	exist, err := h.memberRepo.GetMemberByUsername(ctx, msg.Username)
 	if err != nil {
 		zap.L().Error("Register db get err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
@@ -76,7 +50,7 @@ func (h *LoginService) Register(ctx context.Context, msg *login.RegisterMessage)
 		UpdatedAt:    time.Now(),
 		Status:       1,
 	}
-	err = h.memberRepo.SaveMember(c, mem)
+	err = h.memberRepo.SaveMember(ctx, mem)
 	if err != nil {
 		zap.L().Error("Register db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
@@ -86,10 +60,9 @@ func (h *LoginService) Register(ctx context.Context, msg *login.RegisterMessage)
 }
 
 func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*login.LoginResponse, error) {
-	c := context.Background()
 	//1.数据库查询账号密码是否正确
 	pwd := encrypts.Md5(msg.Password)
-	mem, err := h.memberRepo.FindMember(c, msg.Username, pwd)
+	mem, err := h.memberRepo.FindMember(ctx, msg.Username, pwd)
 	if err != nil {
 		zap.L().Error("Login db FindMember err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
@@ -98,7 +71,7 @@ func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*log
 		return nil, errs.GrpcError(model.UsernameAndPwdError)
 	}
 	//查询hotel_name
-	idAndhotel_name, err := h.memberRepo.GetMemberMessage(c, msg.Username)
+	idAndhotel_name, err := h.memberRepo.GetMemberMessage(ctx, msg.Username)
 	if err != nil {
 		zap.L().Error("Login db GetMemberMessage err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
@@ -125,10 +98,9 @@ func (h *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*log
 }
 
 func (h *LoginService) ChangePassword(ctx context.Context, msg *login.ChangePasswordMessage) (*login.ChangePasswordResponse, error) {
-	c := context.Background()
 	//1.数据库查询账号密码是否正确
 	pwd := encrypts.Md5(msg.Password)
-	mem, err := h.memberRepo.FindMember(c, msg.Username, pwd)
+	mem, err := h.memberRepo.FindMember(ctx, msg.Username, pwd)
 	if err != nil {
 		zap.L().Error("ChangePassword db FindMember err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
@@ -146,7 +118,7 @@ func (h *LoginService) ChangePassword(ctx context.Context, msg *login.ChangePass
 		UpdatedAt:    time.Now(),
 		Status:       1,
 	}
-	err = h.memberRepo.ChangePassword(c, mem)
+	err = h.memberRepo.ChangePassword(ctx, mem)
 	if err != nil {
 		zap.L().Error("ChangePassword db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)

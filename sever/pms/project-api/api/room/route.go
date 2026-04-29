@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	log.Println("init router user")
+	log.Println("init router room")
 	ru := &RouterRoom{}
 	router.Register(ru)
 }

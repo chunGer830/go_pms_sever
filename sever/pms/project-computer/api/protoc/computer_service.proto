@@ -1,0 +1,22 @@
+syntax = "proto3";
+package compute.service.v1;
+option go_package = "project-computer/pkg/service/computer.service.v1";
+
+message ComputerMessage{
+
+}
+
+
+
+message ComputerResponse {
+
+}
+
+
+
+
+
+service ComputerService {
+  rpc Computer(ComputerMessage) returns (ComputerResponse) {}
+
+}
