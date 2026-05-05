@@ -14,10 +14,10 @@ type RoomTypeRepo interface {
 	CreateHotelRoom(ctx context.Context, room *room_type_data.HotelRoom) error
 	UpdateHotelRoom(ctx context.Context, room *room_type_data.HotelRoom) error
 	DeleteHotelRoom(ctx context.Context, room *room_type_data.HotelRoom) error
-	CreateRoomGuestStay(ctx context.Context, room *room_type_data.RoomGuestStay) error
 }
 
 type RoomGuestStayRepo interface {
+	CreateRoomGuestStay(ctx context.Context, room *room_type_data.RoomGuestStay) error
 	FindRoomGuestStay(ctx context.Context, hotelID int64) ([]room_type_data.RoomGuestStay, error)
 	UpdateRoomGuestStay(ctx context.Context, stay *room_type_data.RoomGuestStay) error
 }

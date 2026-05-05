@@ -28,7 +28,7 @@ func New() *RoomService {
 	return &RoomService{
 		cache:             dao.Rc,
 		roomTypeRepo:      dao.NewRoomTypeDao(),
-		roomGuestStayRepo: dao.NewRoomTypeDao(),
+		roomGuestStayRepo: dao.NewRoomGuestStayDao(),
 	}
 }
 
@@ -226,7 +226,7 @@ func (s *RoomService) SaveHotelRoom(ctx context.Context, msg *room_type.SaveHote
 	}
 
 	err := s.roomTypeRepo.CreateHotelRoom(ctx, NewHotelRoom)
-	_ = s.roomTypeRepo.CreateRoomGuestStay(ctx, NewRoomGuestStay)
+	_ = s.roomGuestStayRepo.CreateRoomGuestStay(ctx, NewRoomGuestStay)
 	if err != nil {
 		zap.L().Error("CreateHotelRoom db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
