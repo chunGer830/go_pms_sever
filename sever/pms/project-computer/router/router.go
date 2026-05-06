@@ -49,7 +49,7 @@ type gRPCConfig struct {
 
 func RegisterGrpc() *grpc.Server {
 	c := gRPCConfig{
-		Addr: config.C.GC.Addr,
+		Addr: config.C.GC.ListenAddr,
 		RegisterFunc: func(g *grpc.Server) {
 			action.RegisterComputerServiceServer(g, computer_service_v1.New())
 		}}

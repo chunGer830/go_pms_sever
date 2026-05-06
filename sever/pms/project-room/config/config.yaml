@@ -14,7 +14,8 @@ redis:
   password: ""
   db: 0
 grpc:
-  addr: "0.0.0.0:8882"
+  listen_addr: "0.0.0.0:8882"
+  addr: "project-room:8882"
   name: "room"
   version: "1.0.0"
   weight: 2

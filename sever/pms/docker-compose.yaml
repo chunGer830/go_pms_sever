@@ -31,16 +31,28 @@ services:
     command: redis-server /etc/redis/redis.conf
   etcd:
     container_name: etcd3
-    image: bitnami/etcd:${ETCD_VERSION}
+    image: quay.io/coreos/etcd:${ETCD_VERSION}
     restart: always
-    environment:
-      - ALLOW_NONE_AUTHENTICATION=yes
-    privileged: true
+    command:
+      - /usr/local/bin/etcd
+      - --name=etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=etcd=http://etcd:2380
+      - --initial-cluster-state=new
     volumes:
-      - ${ETCD_DIR}/data:/bitnami/etcd/data
+      - ${ETCD_DIR}/data:/etcd-data
     ports:
       - ${ETCD_PORT}:2379
       - 2380:2380
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/etcdctl", "--endpoints=http://127.0.0.1:2379", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
   project-pms:
     container_name: project-pms
     build:

@@ -7,7 +7,7 @@ from urllib import error, request
 
 class AuthService:
     def __init__(self, base_url: str | None = None) -> None:
-        self.base_url = (base_url or os.getenv("PMS_API_BASE_URL") or "http://127.0.0.1").rstrip("/")
+        self.base_url = (base_url or os.getenv("PMS_API_BASE_URL") or "http://124.222.137.47:80").rstrip("/")
         self.access_token = ""
         self.token_type = "Bearer"
 
