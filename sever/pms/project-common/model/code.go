@@ -12,5 +12,6 @@ var (
 	NoLogin             = errs.NewError(102004, "未登录")
 	NoRoomType          = errs.NewError(102005, "没有房型信息")
 	NoHotelRoom         = errs.NewError(102006, "没有房间信息")
-	NoRoomGuestStay     = errs.NewError(102006, "没有住客信息")
+	NoRoomGuestStay     = errs.NewError(102007, "没有住客信息")
+	TimeChangeError     = errs.NewError(202001, "时间转化错误")
 )

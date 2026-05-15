@@ -1,0 +1,36 @@
+server:
+  name: "project-room"
+  addr: "0.0.0.0:8082"
+zap:
+  debugFileName: "/srv/pms/logs/debug/project-debug.log"
+  infoFileName: "/srv/pms/logs/info/project-info.log"
+  warnFileName: "/srv/pms/logs/error/project-error.log"
+  maxSize: 500
+  maxAge: 28
+  maxBackups: 3
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+grpc:
+  listen_addr: "0.0.0.0:8883"
+  addr: "project-room:8883"
+  name: "room"
+  version: "1.0.0"
+  weight: 2
+etcd:
+  addrs:
+   - "etcd:2379"
+mysql:
+  username: "root"
+  password: "1234"
+  host: "mysql"
+  port: 3306
+  db: "pms"
+jwt:
+  accessExp: 30
+  refreshExp: 45
+  accessSecret: "pms"
+  refreshSecret: "_pms"
+

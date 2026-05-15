@@ -17,6 +17,7 @@ type Config struct {
 	MysqlConfig *MysqlConfig
 	EtcdConfig  *EtcdConfig
 	JwtConfig   *JwtConfig
+	KafkaConfig *KafkaConfig
 }
 
 type ServerConfig struct {
@@ -49,6 +50,9 @@ type JwtConfig struct {
 	RefreshExp    int
 	AccessSecret  string
 	RefreshSecret string
+}
+
+type KafkaConfig struct {
 }
 
 func InitConfig() *Config {

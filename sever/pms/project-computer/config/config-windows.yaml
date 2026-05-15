@@ -1,6 +1,6 @@
 server:
   name: "project-computer"
-  addr: "127.0.0.1:8082"
+  addr: "127.0.0.1:8084"
 zap:
   debugFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\debug\\project-debug.log"
   infoFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\info\\project-info.log"
@@ -14,7 +14,7 @@ redis:
   password: ""
   db: 0
 grpc:
-  addr: "127.0.0.1:8883"
+  addr: "127.0.0.1:8885"
   name: "computer"
   version: "1.0.0"
   weight: 2

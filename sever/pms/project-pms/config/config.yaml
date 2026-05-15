@@ -1,31 +1,30 @@
 server:
   name: "project-pms"
-  addr: "0.0.0.0:8080"
+  addr: "127.0.0.1:8080"
 zap:
-  debugFileName: "/srv/pms/logs/debug/project-debug.log"
-  infoFileName: "/srv/pms/logs/info/project-info.log"
-  warnFileName: "/srv/pms/logs/error/project-error.log"
+  debugFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\debug\\project-debug.log"
+  infoFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\info\\project-info.log"
+  warnFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\error\\project-error.log"
   maxSize: 500
   maxAge: 28
   maxBackups: 3
 redis:
-  host: "redis"
+  host: "localhost"
   port: 6379
   password: ""
   db: 0
 grpc:
-  listen_addr: "0.0.0.0:8881"
-  addr: "project-pms:8881"
+  addr: "127.0.0.1:8881"
   name: "user"
   version: "1.0.0"
   weight: 2
 etcd:
   addrs:
-   - "etcd:2379"
+   - "127.0.0.1:2379"
 mysql:
   username: "root"
   password: "1234"
-  host: "mysql"
+  host: "127.0.0.1"
   port: 3306
   db: "pms"
 jwt:

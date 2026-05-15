@@ -1,13 +1,13 @@
 server:
   name: "project-api"
-  addr: "0.0.0.0:80"
+  addr: "127.0.0.1:80"
 zap:
-  debugFileName: "/srv/pms/logs/debug/project-debug.log"
-  infoFileName: "/srv/pms/logs/info/project-info.log"
-  warnFileName: "/srv/pms/logs/error/project-error.log"
+  debugFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\debug\\project-debug.log"
+  infoFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\info\\project-info.log"
+  warnFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\error\\project-error.log"
   maxSize: 500
   maxAge: 28
   maxBackups: 3
 etcd:
   addrs:
-    - "etcd:2379"
+    - "127.0.0.1:2379"

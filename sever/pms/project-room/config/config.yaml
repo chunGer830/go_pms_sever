@@ -1,31 +1,30 @@
 server:
   name: "project-room"
-  addr: "0.0.0.0:8081"
+  addr: "127.0.0.1:8082"
 zap:
-  debugFileName: "/srv/pms/logs/debug/project-debug.log"
-  infoFileName: "/srv/pms/logs/info/project-info.log"
-  warnFileName: "/srv/pms/logs/error/project-error.log"
+  debugFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\debug\\project-debug.log"
+  infoFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\info\\project-info.log"
+  warnFileName: "D:\\Code\\python\\pms\\sever\\pms\\logs\\error\\project-error.log"
   maxSize: 500
   maxAge: 28
   maxBackups: 3
 redis:
-  host: "redis"
+  host: "localhost"
   port: 6379
   password: ""
   db: 0
 grpc:
-  listen_addr: "0.0.0.0:8882"
-  addr: "project-room:8882"
+  addr: "127.0.0.1:8883"
   name: "room"
   version: "1.0.0"
   weight: 2
 etcd:
   addrs:
-   - "etcd:2379"
+   - "127.0.0.1:2379"
 mysql:
   username: "root"
   password: "1234"
-  host: "mysql"
+  host: "127.0.0.1"
   port: 3306
   db: "pms"
 jwt:
@@ -33,3 +32,25 @@ jwt:
   refreshExp: 45
   accessSecret: "pms"
   refreshSecret: "_pms"
+kafka:
+  bootstrap-servers: "127.0.0.1:9092"
+  # --- 生产者配置 ---
+  producer:
+    topic: ""
+    acks: "all"                    # 等待所有副本确认
+    compression-type: "snappy"     # 使用snappy压缩
+    retries: 3                    # 最大重试次数
+    enable-idempotence: true       # 开启幂等
+    batch-size: 16384              # 16KB
+    linger-ms: 10
+    buffer-memory: 67108864        # 64MB
+  # --- 消费者配置 ---
+  consumer:
+    group-id: ""
+    topic: ""
+    enable-auto-commit: false      # 关闭自动提交，改为手动提交
+    auto-offset-reset: "earliest"  # 第一次从头消费
+    max-poll-records: 500
+    session-timeout-ms: 15000      # 15s
+    heartbeat-interval-ms: 3000    # 3s
+    max-poll-interval-ms: 600000   # 10min

@@ -8,7 +8,9 @@ import (
 	common "pms.com/project-common"
 	"pms.com/project-common/errs"
 	"pms.com/project-common/model"
+	"pms.com/project-grpc/order/order_inf"
 	"pms.com/project-grpc/room/room_type"
+	"pms.com/project-room/internal/consumer"
 	"pms.com/project-room/internal/dao"
 	"pms.com/project-room/internal/data/room_type_data"
 	"pms.com/project-room/internal/database/tran"
@@ -18,17 +20,20 @@ import (
 
 type RoomService struct {
 	room_type.UnimplementedRoomServiceServer
-	cache             repo.Cache
-	roomTypeRepo      repo.RoomTypeRepo
-	roomGuestStayRepo repo.RoomGuestStayRepo
-	transaction       tran.Transaction
+	cache              repo.Cache
+	roomTypeRepo       repo.RoomTypeRepo
+	roomGuestStayRepo  repo.RoomGuestStayRepo
+	transaction        tran.Transaction
+	orderServiceClient order_inf.OrderServiceClient
 }
 
 func New() *RoomService {
 	return &RoomService{
-		cache:             dao.Rc,
-		roomTypeRepo:      dao.NewRoomTypeDao(),
-		roomGuestStayRepo: dao.NewRoomGuestStayDao(),
+		cache:              dao.Rc,
+		roomTypeRepo:       dao.NewRoomTypeDao(),
+		roomGuestStayRepo:  dao.NewRoomGuestStayDao(),
+		transaction:        dao.NewTransaction(),
+		orderServiceClient: dao.OrderServiceClient,
 	}
 }
 
@@ -312,7 +317,6 @@ func (s *RoomService) RoomGuestStay(ctx context.Context, msg *room_type.RoomGues
 
 	list := make([]*room_type.RoomGuestStayItem, 0, len(RoomGuestStays))
 	for _, rt := range RoomGuestStays {
-
 		list = append(list, &room_type.RoomGuestStayItem{
 			Id:           rt.ID,
 			HotelId:      rt.HotelID,
@@ -365,6 +369,15 @@ func (s *RoomService) UpdateRoomGuestStay(ctx context.Context, msg *room_type.Up
 		zap.L().Error("UpdateRoomGuestStay db save err ", zap.Error(err))
 		return nil, errs.GrpcError(model.DBError)
 	}
+
+	data, err := json.Marshal(NewRoomGuestStay)
+	if err != nil {
+		zap.L().Error("NewRoomGuestStay Marshal  err ", zap.Error(err))
+	}
+	go consumer.SendOrderServiceMsg(data)
+
+	//msg2 := &order_inf.OrderInfMessage{}
+	//_, err = s.orderServiceClient.OrderInf(ctx, msg)
 
 	//删缓存
 

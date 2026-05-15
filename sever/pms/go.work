@@ -7,5 +7,6 @@ use (
 	./project-grpc
 	./project-room
 	./project-computer
+	./project-order
 
 )

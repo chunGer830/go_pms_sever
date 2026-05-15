@@ -118,3 +118,34 @@ services:
       - /srv/pms/logs:/srv/pms/logs
     ports:
       - ${API_PORT}:80
+
+  es:
+    container_name: es
+    image: elasticsearch:8.6.0
+    volumes:
+      - ${ES_DIR}/data:/usr/share/elasticsearch/data
+      - ${ES_DIR}/logs:/usr/share/elasticsearch/logs
+      - ${ES_DIR}/plugins:/usr/share/elasticsearch/plugins
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - node.name=es
+      - cluster.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    privileged: true
+  kibana:
+    image: kibana:8.6.0
+    container_name: kibana
+    depends_on:
+      - es
+    environment:
+      SERVER_NAME: kibana
+      SERVER_HOST: "0.0.0.0"
+      ELASTICSEARCH_HOSTS: http://es:9200
+    ports:
+      - 5601:5601

@@ -42,11 +42,15 @@ func New() *GormConn {
 }
 
 func NewTran() *GormConn {
-	return &GormConn{db: GetDB(), tx: GetDB().Begin()}
+	return &GormConn{db: GetDB(), tx: GetDB()}
 }
 
 func (g *GormConn) Session(ctx context.Context) *gorm.DB {
 	return g.db.Session(&gorm.Session{Context: ctx})
+}
+
+func (g *GormConn) Begin() {
+	g.tx = GetDB().Begin()
 }
 
 func (g *GormConn) Rollback() {
@@ -55,4 +59,8 @@ func (g *GormConn) Rollback() {
 
 func (g *GormConn) Commit() {
 	g.tx.Commit()
+}
+
+func (g *GormConn) Tx(ctx context.Context) *gorm.DB {
+	return g.tx.WithContext(ctx)
 }

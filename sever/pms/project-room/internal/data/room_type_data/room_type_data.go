@@ -20,7 +20,7 @@ type RoomType struct {
 	UpdatedAt      time.Time `gorm:"column:updated_at;not null;autoUpdateTime" json:"updated_at"`      // 更新时间
 }
 
-func (*RoomType) TableName() string {
+func (RoomType) TableName() string {
 	return "room_type"
 }
 

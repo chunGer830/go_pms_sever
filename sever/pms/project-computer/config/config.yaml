@@ -1,6 +1,6 @@
 server:
   name: "project-computer"
-  addr: "0.0.0.0:8082"
+  addr: "0.0.0.0:8084"
 zap:
   debugFileName: "/srv/pms/logs/debug/project-debug.log"
   infoFileName: "/srv/pms/logs/info/project-info.log"
@@ -14,8 +14,8 @@ redis:
   password: ""
   db: 0
 grpc:
-  listen_addr: "0.0.0.0:8883"
-  addr: "project-computer:8883"
+  listen_addr: "0.0.0.0:8885"
+  addr: "project-computer:8885"
   name: "computer"
   version: "1.0.0"
   weight: 2
