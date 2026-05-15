@@ -3,7 +3,7 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"go.uber.org/zap"
 	"pms.com/project-common/kk"
 	"pms.com/project-grpc/order/order_inf"
@@ -66,39 +66,59 @@ func NewOrderServiceReader() *KafkaCache {
 
 func (c *KafkaCache) OrderService() {
 	for {
-		message, err := c.R.R.ReadMessage(context.Background())
-		fmt.Println("message.Key:", string(message.Key))
+		// 1. 读取消息（超时只表示无新消息）
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		message, err := c.R.R.ReadMessage(ctx)
+		cancel()
+
 		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				// 超时无消息，正常继续
+				continue
+			}
 			zap.L().Error("OrderService error", zap.Error(err))
+			time.Sleep(time.Second) // 避免疯狂重试
 			continue
 		}
 
-		if "Service" == string(message.Key) {
-
-			var data room_type_data.RoomGuestStay
-			if err := json.Unmarshal(message.Value, &data); err != nil {
-				zap.L().Error("unmarshal message error", zap.Error(err))
-				continue
-			}
-			orderServiceClient := dao.OrderServiceClient
-			msg := &order_inf.OrderInfMessage{
-				HotelId:      data.HotelID,
-				GuestRoomNo:  data.GuestRoomNo,
-				GuestName:    data.GuestName,
-				GuestIdNo:    data.GuestIDNo,
-				RealPrice:    data.RealPrice,
-				Mobile:       data.Mobile,
-				CheckInTime:  data.CheckInTime,
-				CheckOutTime: data.CheckOutTime,
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-
-			_, err = orderServiceClient.OrderInf(ctx, msg)
-			cancel()
-			if err != nil {
-				zap.L().Error(" err ", zap.Error(err))
-			}
+		// 2. 过滤 key
+		if "Service" != string(message.Key) {
+			continue
 		}
 
+		// 3. 反序列化
+		var data room_type_data.RoomGuestStay
+		if err := json.Unmarshal(message.Value, &data); err != nil {
+			zap.L().Error("unmarshal message error", zap.Error(err))
+			continue
+		}
+
+		// 4. 检查 RPC 客户端
+		orderServiceClient := dao.OrderServiceClient
+		if orderServiceClient == nil {
+			zap.L().Error("OrderService client is nil")
+			continue
+		}
+
+		// 5. 构造 RPC 请求
+		msg := &order_inf.OrderInfMessage{
+			HotelId:      data.HotelID,
+			GuestRoomNo:  data.GuestRoomNo,
+			GuestName:    data.GuestName,
+			GuestIdNo:    data.GuestIDNo,
+			RealPrice:    data.RealPrice,
+			Mobile:       data.Mobile,
+			CheckInTime:  data.CheckInTime,
+			CheckOutTime: data.CheckOutTime,
+		}
+
+		rpcCtx, rpcCancel := context.WithTimeout(context.Background(), 2*time.Second)
+		_, err = orderServiceClient.OrderInf(rpcCtx, msg)
+		rpcCancel()
+
+		if err != nil {
+			zap.L().Error(" OrderInf rpc call error ", zap.Error(err))
+			continue
+		}
 	}
 }
