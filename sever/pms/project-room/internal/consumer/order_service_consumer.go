@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"pms.com/project-common/kk"
 	"pms.com/project-grpc/order/order_inf"
+	"pms.com/project-room/config"
 	"pms.com/project-room/internal/dao"
 	"pms.com/project-room/internal/data/room_type_data"
 	"time"
@@ -15,50 +16,25 @@ import (
 var kw *kk.KafkaWriter
 
 func InitKafkaWriter() func() {
-	kw = kk.GetWriter("localhost:9092")
+	kw = kk.GetWriter(config.C.KafkaConfig.Addr)
 	return kw.Close
-}
-
-func SendLog(data []byte) {
-	kw.Send(kk.LogData{
-		Topic: "pms_log",
-		Data:  data,
-	})
 }
 
 type KafkaCache struct {
 	R *kk.KafkaReader
 }
 
-func NewCacheReader() *KafkaCache {
-	reader := kk.GetReader([]string{"localhost:9092"}, "cache_group", "pms_cache")
-	return &KafkaCache{
-		R: reader,
-	}
-}
-
-func (c *KafkaCache) DeleteCache() {
-	for {
-		message, err := c.R.R.ReadMessage(context.Background())
-		if err != nil {
-			zap.L().Error("DeleteCache error", zap.Error(err))
-			continue
-		}
-		if "task" == string(message.Value) {
-
-		}
-	}
-}
-
 func SendOrderServiceMsg(data []byte) {
-	kw.Send(kk.LogData{
+	kw.Send(kk.ToSendData{
 		Topic: "orderService",
+		Key:   []byte("Service"),
 		Data:  data,
 	})
 }
 
 func NewOrderServiceReader() *KafkaCache {
-	reader := kk.GetReader([]string{"localhost:9092"}, "orderService_group", "orderService")
+	//TODO  修改config
+	reader := kk.GetReader([]string{config.C.KafkaConfig.Addr}, "orderService_group", "orderService")
 	return &KafkaCache{
 		R: reader,
 	}
@@ -119,6 +95,33 @@ func (c *KafkaCache) OrderService() {
 		if err != nil {
 			zap.L().Error(" OrderInf rpc call error ", zap.Error(err))
 			continue
+		}
+	}
+}
+
+func SendLog(data []byte) {
+	kw.Send(kk.ToSendData{
+		Topic: "pms_log",
+		Data:  data,
+	})
+}
+
+func NewCacheReader() *KafkaCache {
+	reader := kk.GetReader([]string{"localhost:9092"}, "cache_group", "pms_cache")
+	return &KafkaCache{
+		R: reader,
+	}
+}
+
+func (c *KafkaCache) DeleteCache() {
+	for {
+		message, err := c.R.R.ReadMessage(context.Background())
+		if err != nil {
+			zap.L().Error("DeleteCache error", zap.Error(err))
+			continue
+		}
+		if "task" == string(message.Value) {
+
 		}
 	}
 }

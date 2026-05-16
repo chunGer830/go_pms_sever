@@ -34,3 +34,26 @@ jwt:
   accessSecret: "pms"
   refreshSecret: "_pms"
 
+kafka:
+  bootstrap-servers: "127.0.0.1:9092"
+  # --- 生产者配置 ---
+  producer:
+    topic: ""
+    acks: "all"                    # 等待所有副本确认
+    compression-type: "snappy"     # 使用snappy压缩
+    retries: 3                    # 最大重试次数
+    enable-idempotence: true       # 开启幂等
+    batch-size: 16384              # 16KB
+    linger-ms: 10
+    buffer-memory: 67108864        # 64MB
+  # --- 消费者配置 ---
+  consumer:
+    group-id: ""
+    topic: ""
+    enable-auto-commit: false      # 关闭自动提交，改为手动提交
+    auto-offset-reset: "earliest"  # 第一次从头消费
+    max-poll-records: 500
+    session-timeout-ms: 15000      # 15s
+    heartbeat-interval-ms: 3000    # 3s
+    max-poll-interval-ms: 600000   # 10min
+

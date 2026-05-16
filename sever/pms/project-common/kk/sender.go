@@ -8,32 +8,37 @@ import (
 	"time"
 )
 
-type LogData struct {
+type ToSendData struct {
 	Topic string
+	Key   []byte
 	//json数据
 	Data []byte
 }
 
 type KafkaWriter struct {
 	w    *kafka.Writer
-	data chan LogData
+	data chan ToSendData
 }
 
 func GetWriter(addr string) *KafkaWriter {
+	//TODO
 	w := &kafka.Writer{
-		Addr:     kafka.TCP(addr),
-		Balancer: &kafka.LeastBytes{},
+		Addr:         kafka.TCP(addr),
+		Balancer:     &kafka.LeastBytes{},
+		RequiredAcks: kafka.RequireAll,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
 	}
 
 	k := &KafkaWriter{
 		w:    w,
-		data: make(chan LogData, 100),
+		data: make(chan ToSendData, 100),
 	}
 	go k.sendKafka()
 	return k
 }
 
-func (w *KafkaWriter) Send(data LogData) {
+func (w *KafkaWriter) Send(data ToSendData) {
 	w.data <- data
 }
 
@@ -44,7 +49,7 @@ func (w *KafkaWriter) sendKafka() {
 			messages := []kafka.Message{
 				{
 					Topic: data.Topic,
-					Key:   []byte("Service"),
+					Key:   data.Key,
 					Value: data.Data,
 				},
 			}

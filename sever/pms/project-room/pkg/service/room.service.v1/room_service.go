@@ -370,19 +370,16 @@ func (s *RoomService) UpdateRoomGuestStay(ctx context.Context, msg *room_type.Up
 		return nil, errs.GrpcError(model.DBError)
 	}
 
+	//删缓存
+	key3 := fmt.Sprintf("%s%d", model.RoomGuestStayRedis, msg.HotelId)
+	_ = s.cache.Delete(ctx, key3)
+
+	//发送kafka
 	data, err := json.Marshal(NewRoomGuestStay)
 	if err != nil {
 		zap.L().Error("NewRoomGuestStay Marshal  err ", zap.Error(err))
 	}
 	go consumer.SendOrderServiceMsg(data)
-
-	//msg2 := &order_inf.OrderInfMessage{}
-	//_, err = s.orderServiceClient.OrderInf(ctx, msg)
-
-	//删缓存
-
-	key3 := fmt.Sprintf("%s%d", model.RoomGuestStayRedis, msg.HotelId)
-	_ = s.cache.Delete(ctx, key3)
 
 	return &room_type.UpdateRoomGuestStayResponse{}, nil
 }

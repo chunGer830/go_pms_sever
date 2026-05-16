@@ -53,6 +53,7 @@ type JwtConfig struct {
 }
 
 type KafkaConfig struct {
+	Addr string
 }
 
 func InitConfig() *Config {
@@ -67,15 +68,16 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.ReadGrpcConfig()
-	conf.InitZapLog()
+	conf.ReadZapLog()
 	conf.ReadGrpcConfig()
 	conf.ReadEtcdConfig()
-	conf.InitMysqlConfig()
-	conf.InitJwtConfig()
+	conf.ReadMysqlConfig()
+	conf.ReadJwtConfig()
+	conf.ReadKafkaConfig()
 	return conf
 }
 
-func (c *Config) InitZapLog() {
+func (c *Config) ReadZapLog() {
 	//从配置中读取日志配置，初始化日志
 	lc := &logs.LogConfig{
 		DebugFileName: c.viper.GetString("zap.debugFileName"),
@@ -130,7 +132,7 @@ func (c *Config) ReadEtcdConfig() {
 	c.EtcdConfig = ec
 }
 
-func (c *Config) InitMysqlConfig() {
+func (c *Config) ReadMysqlConfig() {
 	mc := &MysqlConfig{
 		Username: c.viper.GetString("mysql.username"),
 		Password: c.viper.GetString("mysql.password"),
@@ -141,7 +143,7 @@ func (c *Config) InitMysqlConfig() {
 	c.MysqlConfig = mc
 }
 
-func (c *Config) InitJwtConfig() {
+func (c *Config) ReadJwtConfig() {
 	jc := &JwtConfig{
 		AccessExp:     c.viper.GetInt("jwt.accessExp"),
 		RefreshExp:    c.viper.GetInt("jwt.refreshExp"),
@@ -149,4 +151,11 @@ func (c *Config) InitJwtConfig() {
 		RefreshSecret: c.viper.GetString("jwt.refreshSecret"),
 	}
 	c.JwtConfig = jc
+}
+
+func (c *Config) ReadKafkaConfig() {
+	kc := &KafkaConfig{
+		Addr: c.viper.GetString("kafka.bootstrap-servers"),
+	}
+	c.KafkaConfig = kc
 }

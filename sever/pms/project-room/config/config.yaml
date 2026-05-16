@@ -40,7 +40,7 @@ kafka:
     acks: "all"                    # 等待所有副本确认
     compression-type: "snappy"     # 使用snappy压缩
     retries: 3                    # 最大重试次数
-    enable-idempotence: true       # 开启幂等
+    #enable-idempotence: true       # 开启幂等         kafka-go没有这个配置  需要做好业务层的幂等
     batch-size: 16384              # 16KB
     linger-ms: 10
     buffer-memory: 67108864        # 64MB
